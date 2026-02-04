@@ -16,8 +16,8 @@ exports.sendOtp = async (req, res) => {
         const { phone } = req.body;
         if (!phone) return res.status(400).json({ message: 'Phone number is required' });
 
-        // Generate 4-digit OTP
-        const code = Math.floor(1000 + Math.random() * 9000).toString();
+        // Generate fixed test OTP (7777)
+        const code = "7777";
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
         // Save OTP to DB
