@@ -14,7 +14,10 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 const authRoutes = require('./routes/auth');
+const onboardingRoutes = require('./routes/onboarding');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/onboarding', onboardingRoutes);
 
 // Database Connection
 const PORT = process.env.PORT || 5000;

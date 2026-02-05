@@ -40,6 +40,58 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['local', 'google', 'apple'],
         default: 'local'
+    },
+    // Onboarding fields
+    nickname: {
+        type: String,
+        trim: true
+    },
+    gender: {
+        type: String,
+        enum: ['male', 'female', 'other', '']
+    },
+    location: {
+        latitude: Number,
+        longitude: Number,
+        address: String
+    },
+    searchRadius: {
+        type: Number,
+        default: 50
+    },
+    placeOfBirth: {
+        type: String
+    },
+    timeOfBirth: {
+        type: String // Format HH:mm
+    },
+    lookingFor: [{
+        type: String
+    }],
+    interests: [{
+        type: String
+    }],
+    photos: [{
+        type: String
+    }],
+    bio: {
+        type: String,
+        maxLength: 500
+    },
+    personalityType: {
+        type: String // To store mask type/personality info
+    },
+    notificationsEnabled: {
+        type: Boolean,
+        default: false
+    },
+    onboardingStep: {
+        type: Number,
+        default: 1
+    },
+    onboardingCompleted: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 
