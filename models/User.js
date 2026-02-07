@@ -103,7 +103,11 @@ const userSchema = new mongoose.Schema({
     },
     videos: [{
         type: String
-    }]
+    }],
+    jungType: {
+        type: String,
+        default: ''
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);
