@@ -92,7 +92,18 @@ const userSchema = new mongoose.Schema({
     onboardingCompleted: {
         type: Boolean,
         default: false
-    }
+    },
+    ageRange: {
+        type: String,
+        default: ''
+    },
+    hideProfile: {
+        type: Boolean,
+        default: false
+    },
+    videos: [{
+        type: String
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

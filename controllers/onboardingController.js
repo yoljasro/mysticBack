@@ -8,7 +8,8 @@ exports.updateProfile = async (req, res) => {
             'name', 'nickname', 'gender', 'location', 'searchRadius',
             'placeOfBirth', 'timeOfBirth', 'lookingFor', 'interests',
             'photos', 'bio', 'personalityType', 'onboardingStep',
-            'onboardingCompleted'
+            'onboardingCompleted', 'notificationsEnabled', 'ageRange',
+            'dateOfBirth', 'hideProfile'
         ];
 
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
@@ -29,30 +30,40 @@ exports.updateProfile = async (req, res) => {
     }
 };
 
-// Upload multiple photos for the user gallery
-exports.uploadPhotos = async (req, res) => {
+// Upload multiple photos/videos for the user gallery
+exports.uploadMedia = async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
-            return res.status(400).send({ error: 'Please upload at least one image.' });
+            return res.status(400).send({ error: 'Please upload at least one file.' });
         }
 
-        const photoUrls = req.files.map(file => {
-            return `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+        const newPhotos = [];
+        const newVideos = [];
+
+        req.files.forEach(file => {
+            const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+            if (file.mimetype.startsWith('image/')) {
+                newPhotos.push(url);
+            } else if (file.mimetype.startsWith('video/')) {
+                newVideos.push(url);
+            }
         });
 
-        // Add new photos to existing ones, or replace? 
-        // Based on Figma, it looks like a gallery. Let's append or replace based on request.
+        // Add new media to existing ones, or replace?
         if (req.body.replace === 'true') {
-            req.user.photos = photoUrls;
+            if (newPhotos.length > 0) req.user.photos = newPhotos;
+            if (newVideos.length > 0) req.user.videos = newVideos;
         } else {
-            req.user.photos = req.user.photos.concat(photoUrls);
+            req.user.photos = req.user.photos.concat(newPhotos);
+            req.user.videos = req.user.videos.concat(newVideos);
         }
 
         await req.user.save();
 
         res.status(200).send({
-            message: 'Photos uploaded successfully',
-            photos: req.user.photos
+            message: 'Media uploaded successfully',
+            photos: req.user.photos,
+            videos: req.user.videos
         });
     } catch (error) {
         res.status(500).send({ error: error.message });
