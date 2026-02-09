@@ -59,6 +59,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 50
     },
+    locationEnabled: {
+        type: Boolean,
+        default: false
+    },
     placeOfBirth: {
         type: String
     },

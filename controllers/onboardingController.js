@@ -9,7 +9,7 @@ exports.updateProfile = async (req, res) => {
             'placeOfBirth', 'timeOfBirth', 'lookingFor', 'interests',
             'photos', 'bio', 'personalityType', 'onboardingStep',
             'onboardingCompleted', 'notificationsEnabled', 'ageRange',
-            'dateOfBirth', 'hideProfile', 'jungType'
+            'dateOfBirth', 'hideProfile', 'jungType', 'locationEnabled'
         ];
 
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
