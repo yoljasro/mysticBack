@@ -9,9 +9,13 @@ router.post('/send-otp', authController.sendOtp);
 router.post('/verify-otp', authController.verifyOtp);
 
 const upload = require('../middleware/upload');
+const auth = require('../middleware/auth');
 
 // POST /api/auth/register
 router.post('/register', upload.single('avatar'), authController.register);
+
+// GET /api/auth/users - Search users
+router.get('/users', auth, authController.searchUsers);
 
 // POST /api/auth/login
 router.post('/login', authController.login);

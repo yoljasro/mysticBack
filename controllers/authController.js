@@ -194,3 +194,22 @@ exports.appleLogin = async (req, res) => {
         res.status(500).json({ message: 'Apple Auth Failed', error: error.message });
     }
 };
+
+exports.searchUsers = async (req, res) => {
+    try {
+        const keyword = req.query.search
+            ? {
+                $or: [
+                    { name: { $regex: req.query.search, $options: "i" } },
+                    { email: { $regex: req.query.search, $options: "i" } },
+                    { phone: { $regex: req.query.search, $options: "i" } },
+                ],
+            }
+            : {};
+
+        const users = await User.find(keyword).find({ _id: { $ne: req.user._id } }).select("-password");
+        res.send(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Search failed', error: error.message });
+    }
+};
