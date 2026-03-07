@@ -16,10 +16,12 @@ app.use('/uploads', express.static('uploads'));
 const authRoutes = require('./routes/auth');
 const onboardingRoutes = require('./routes/onboarding');
 const chatRoutes = require('./routes/chat');
+const natalRoutes = require('./routes/natal');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/natal', natalRoutes);
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
