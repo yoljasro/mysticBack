@@ -17,11 +17,13 @@ const authRoutes = require('./routes/auth');
 const onboardingRoutes = require('./routes/onboarding');
 const chatRoutes = require('./routes/chat');
 const natalRoutes = require('./routes/natal');
+const lunarRoutes = require('./routes/lunar');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/natal', natalRoutes);
+app.use('/api/lunar', lunarRoutes);
 
 // Database Connection
 const PORT = process.env.PORT || 5000;

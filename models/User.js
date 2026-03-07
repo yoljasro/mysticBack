@@ -41,6 +41,15 @@ const userSchema = new mongoose.Schema({
         enum: ['local', 'google', 'apple'],
         default: 'local'
     },
+    deviceToken: {
+        type: String
+    },
+    lunarSettings: {
+        newAndFullMoon: { type: Boolean, default: true }, // Новолуние и Полнолуние
+        moonPhaseChange: { type: Boolean, default: true }, // Смена фаз луны
+        tipOfTheDay: { type: Boolean, default: true }, // Совет дня
+        affirmation: { type: Boolean, default: true } // Аффирмация дня
+    },
     // Onboarding fields
     nickname: {
         type: String,
