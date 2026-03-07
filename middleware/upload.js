@@ -11,14 +11,14 @@ const storage = multer.diskStorage({
 
 // Check file type
 function checkFileType(file, cb) {
-    const filetypes = /jpeg|jpg|png|gif|mp4|mov|avi|mkv/;
+    const filetypes = /jpeg|jpg|png|gif|mp4|mov|avi|mkv|mp3|wav|m4a|ogg|aac/;
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = filetypes.test(file.mimetype);
 
     if (mimetype && extname) {
         return cb(null, true);
     } else {
-        cb('Error: Images and Videos Only!');
+        cb('Error: Images, Videos, and Audio Only!');
     }
 }
 

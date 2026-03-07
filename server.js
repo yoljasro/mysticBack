@@ -40,6 +40,8 @@ const server = mongoose.connect(MONGO_URI)
             },
         });
 
+        app.set('io', io);
+
         io.on("connection", (socket) => {
             console.log("Connected to socket.io");
 
@@ -57,21 +59,10 @@ const server = mongoose.connect(MONGO_URI)
             socket.on("typing", (room) => socket.in(room).emit("typing"));
             socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 
-            socket.on("new message", (newMessageReceived) => {
-                var chat = newMessageReceived.chat;
 
-                if (!chat.participants) return console.log("chat.participants not defined");
 
-                chat.participants.forEach((user) => {
-                    if (user._id == newMessageReceived.sender._id) return;
-
-                    socket.in(user._id).emit("message received", newMessageReceived);
-                });
-            });
-
-            socket.off("setup", () => {
+            socket.on("disconnect", () => {
                 console.log("USER DISCONNECTED");
-                socket.leave(userData._id);
             });
         });
 

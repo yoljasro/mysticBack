@@ -69,28 +69,28 @@ exports.fetchChats = async (req, res) => {
 
 // Create Group Chat
 exports.createGroupChat = async (req, res) => {
-    if (!req.body.users || !req.body.name) {
+    if (!req.body.participants || !req.body.name) {
         return res.status(400).send({ message: "Please Fill all the fields" });
     }
 
-    var users = JSON.parse(req.body.users);
+    var participants = JSON.parse(req.body.participants);
 
-    if (users.length < 2) {
-        return res.status(400).send("More than 2 users are required to form a group chat");
+    if (participants.length < 2) {
+        return res.status(400).send("More than 2 participants are required to form a group chat");
     }
 
-    users.push(req.user);
+    participants.push(req.user);
 
     try {
         const groupChat = await Chat.create({
             chatName: req.body.name,
-            users: users,
+            participants: participants,
             isGroupChat: true,
             groupAdmin: req.user,
         });
 
         const fullGroupChat = await Chat.findOne({ _id: groupChat._id })
-            .populate("users", "-password")
+            .populate("participants", "-password")
             .populate("groupAdmin", "-password");
 
         res.status(200).json(fullGroupChat);
@@ -108,7 +108,7 @@ exports.renameGroup = async (req, res) => {
         { chatName: chatName },
         { new: true }
     )
-        .populate("users", "-password")
+        .populate("participants", "-password")
         .populate("groupAdmin", "-password");
 
     if (!updatedChat) {
@@ -203,6 +203,15 @@ exports.sendMessage = async (req, res) => {
         });
 
         await Chat.findByIdAndUpdate(req.body.chatId, { latestMessage: message });
+
+        const io = req.app.get("io");
+        if (io) {
+            message.chat.participants.forEach((user) => {
+                if (user._id.toString() !== message.sender._id.toString()) {
+                    io.in(user._id.toString()).emit("message received", message);
+                }
+            });
+        }
 
         res.json(message);
     } catch (error) {
