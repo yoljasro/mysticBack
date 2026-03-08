@@ -124,7 +124,23 @@ const userSchema = new mongoose.Schema({
     contacts: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
+    notificationSettings: {
+        dailyHoroscope: { type: Boolean, default: true },
+        newAndFullMoon: { type: Boolean, default: true },
+        compatibilityOfTheDay: { type: Boolean, default: true },
+        promotions: { type: Boolean, default: true },
+        soundEffects: { type: Boolean, default: true }
+    },
+    appSettings: {
+        language: { type: String, default: 'russian' },
+        theme: { type: String, enum: ['light', 'dark', 'system'], default: 'dark' },
+        timeFormat: { type: String, enum: ['12h', '24h'], default: '24h' }
+    },
+    isOpenForReading: {
+        type: Boolean,
+        default: true
+    }
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

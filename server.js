@@ -24,6 +24,8 @@ app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/natal', natalRoutes);
 app.use('/api/lunar', lunarRoutes);
+const profileRoutes = require('./routes/profile');
+app.use('/api/profile', profileRoutes);
 
 // Database Connection
 const PORT = process.env.PORT || 5000;
