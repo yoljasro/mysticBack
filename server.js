@@ -25,7 +25,10 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/natal', natalRoutes);
 app.use('/api/lunar', lunarRoutes);
 const profileRoutes = require('./routes/profile');
+const matchRoutes = require('./routes/match');
+
 app.use('/api/profile', profileRoutes);
+app.use('/api/matches', matchRoutes);
 
 // Database Connection
 const PORT = process.env.PORT || 5000;

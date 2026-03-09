@@ -1,0 +1,142 @@
+const User = require('../models/User');
+const Interaction = require('../models/Interaction');
+const Chat = require('../models/Chat');
+const asyncHandler = require('express-async-handler');
+
+// @desc    Get user feed (potential matches)
+// @route   GET /api/matches/feed
+// @access  Private
+const getFeed = asyncHandler(async (req, res) => {
+    const currentUserId = req.user.id;
+
+    // Find users we've already interacted with
+    const interactions = await Interaction.find({ requester: currentUserId });
+    const interactedUserIds = interactions.map(i => i.recipient.toString());
+
+    // Include the current user's ID to exclude themselves
+    interactedUserIds.push(currentUserId.toString());
+
+    // Fetch users who are NOT in the interacted list
+    // Optionally, could add gender preference or age range filtering here based on req.user settings
+    const feedUsers = await User.find({
+        _id: { $nin: interactedUserIds }
+    }).select('name avatar bio photos ageRange gender nickname location');
+
+    res.json(feedUsers);
+});
+
+// @desc    Like or pass a user
+// @route   POST /api/matches/action
+// @access  Private
+const swipeAction = asyncHandler(async (req, res) => {
+    const requesterId = req.user.id;
+    const { recipientId, action } = req.body;
+
+    if (!recipientId || !['like', 'pass'].includes(action)) {
+        return res.status(400).json({ message: 'Valid recipientId and action (like/pass) are required' });
+    }
+
+    if (requesterId.toString() === recipientId.toString()) {
+        return res.status(400).json({ message: 'You cannot swipe on yourself' });
+    }
+
+    // Check if interaction already exists to prevent duplicates
+    const existingInteraction = await Interaction.findOne({ requester: requesterId, recipient: recipientId });
+    if (existingInteraction) {
+        return res.status(400).json({ message: 'You have already interacted with this user' });
+    }
+
+    // Check if the recipient already liked the requester
+    const recipientInteraction = await Interaction.findOne({
+        requester: recipientId,
+        recipient: requesterId,
+        action: 'like'
+    });
+
+    let isMatch = false;
+    let chatRoom = null;
+
+    if (action === 'like' && recipientInteraction) {
+        // It's a match!
+        isMatch = true;
+
+        // Update both interactions to reflect the match
+        recipientInteraction.isMatch = true;
+        await recipientInteraction.save();
+
+        // Automatically create a one-on-one chat room (using existing Chat model if it supports standard 1-on-1)
+        chatRoom = await Chat.findOne({
+            isGroupChat: false,
+            $and: [
+                { participants: { $elemMatch: { $eq: requesterId } } },
+                { participants: { $elemMatch: { $eq: recipientId } } }
+            ]
+        });
+
+        if (!chatRoom) {
+            chatRoom = await Chat.create({
+                chatName: 'Match Chat',
+                isGroupChat: false,
+                participants: [requesterId, recipientId]
+            });
+            chatRoom = await Chat.findOne({ _id: chatRoom._id }).populate("participants", "-password");
+        }
+    }
+
+    const newInteraction = await Interaction.create({
+        requester: requesterId,
+        recipient: recipientId,
+        action: action,
+        isMatch: isMatch
+    });
+
+    res.status(201).json({
+        message: isMatch ? 'It is a match!' : 'Swiped successfully',
+        isMatch: isMatch,
+        chat: chatRoom ? chatRoom : null
+    });
+});
+
+// @desc    Get all users the current user is matched with
+// @route   GET /api/matches
+// @access  Private
+const getMatches = asyncHandler(async (req, res) => {
+    const currentUserId = req.user.id;
+
+    // Find all interaction where it's a match and current user is the requester or recipient
+    const matches = await Interaction.find({
+        $or: [
+            { requester: currentUserId, isMatch: true },
+            { recipient: currentUserId, isMatch: true } // Usually if one is set to true, the reciprocal one is also true
+        ]
+    })
+        .populate('requester', 'name avatar nickname ageRange')
+        .populate('recipient', 'name avatar nickname ageRange');
+
+    // Extract the profile of the matched user (not the current user)
+    const matchedProfiles = matches.map(match => {
+        if (match.requester._id.toString() === currentUserId.toString()) {
+            return match.recipient;
+        } else {
+            return match.requester;
+        }
+    });
+
+    // Remove duplicates if the query happens to fetch reciprocal pairs 
+    const uniqueMatchIds = new Set();
+    const uniqueMatches = [];
+    mappedProfiles = matchedProfiles.filter(profile => {
+        if (!uniqueMatchIds.has(profile._id.toString())) {
+            uniqueMatchIds.add(profile._id.toString());
+            uniqueMatches.push(profile);
+        }
+    });
+
+    res.json(uniqueMatches);
+});
+
+module.exports = {
+    getFeed,
+    swipeAction,
+    getMatches
+};
