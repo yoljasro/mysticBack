@@ -3,26 +3,96 @@ const Interaction = require('../models/Interaction');
 const Chat = require('../models/Chat');
 const asyncHandler = require('express-async-handler');
 
+// Helper function to calculate compatibility percentage
+const calculateCompatibility = (user1, user2) => {
+    let score = 20; // Base compatibility
+
+    // 1. Interests overlap (max 40%)
+    if (user1.interests && user2.interests) {
+        const commonInterests = user1.interests.filter(interest =>
+            user2.interests.includes(interest)
+        );
+        score += Math.min(commonInterests.length * 10, 40);
+    }
+
+    // 2. Looking For overlap (20%)
+    if (user1.lookingFor && user2.lookingFor) {
+        const commonLookingFor = user1.lookingFor.filter(item =>
+            user2.lookingFor.includes(item)
+        );
+        if (commonLookingFor.length > 0) score += 20;
+    }
+
+    // 3. Jung Type / Personality (20%)
+    if (user1.jungType && user2.jungType) {
+        // Simplified: if both have a type, they get a bonus for the feature's sake
+        score += 20;
+    }
+
+    // 4. Random variance for "mystic" feel (±5%)
+    const variance = Math.floor(Math.random() * 11) - 5;
+    score += variance;
+
+    return Math.min(Math.max(score, 10), 99); // Keep between 10% and 99%
+};
+
 // @desc    Get user feed (potential matches)
 // @route   GET /api/matches/feed
 // @access  Private
 const getFeed = asyncHandler(async (req, res) => {
     const currentUserId = req.user.id;
+    const currentUser = await User.findById(currentUserId);
 
     // Find users we've already interacted with
     const interactions = await Interaction.find({ requester: currentUserId });
     const interactedUserIds = interactions.map(i => i.recipient.toString());
 
-    // Include the current user's ID to exclude themselves
     interactedUserIds.push(currentUserId.toString());
 
-    // Fetch users who are NOT in the interacted list
-    // Optionally, could add gender preference or age range filtering here based on req.user settings
+    // Fetch potential matches
     const feedUsers = await User.find({
-        _id: { $nin: interactedUserIds }
-    }).select('name avatar bio photos ageRange gender nickname location');
+        _id: { $nin: interactedUserIds },
+        onboardingCompleted: true,
+        hideProfile: false
+    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType');
 
-    res.json(feedUsers);
+    // Add compatibility score to each user
+    const feedWithScores = feedUsers.map(user => {
+        const userObj = user.toObject();
+        userObj.compatibilityScore = calculateCompatibility(currentUser, user);
+        return userObj;
+    });
+
+    res.json(feedWithScores);
+});
+
+// @desc    Get quick matches (sorted by compatibility)
+// @route   GET /api/matches/quick
+// @access  Private
+const getQuickMatches = asyncHandler(async (req, res) => {
+    const currentUserId = req.user.id;
+    const currentUser = await User.findById(currentUserId);
+
+    const interactions = await Interaction.find({ requester: currentUserId });
+    const interactedUserIds = interactions.map(i => i.recipient.toString());
+    interactedUserIds.push(currentUserId.toString());
+
+    const potentialMatches = await User.find({
+        _id: { $nin: interactedUserIds },
+        onboardingCompleted: true,
+        hideProfile: false
+    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType');
+
+    const matchesWithScores = potentialMatches.map(user => {
+        const userObj = user.toObject();
+        userObj.compatibilityScore = calculateCompatibility(currentUser, user);
+        return userObj;
+    });
+
+    // Sort by compatibility score descending
+    matchesWithScores.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
+
+    res.json(matchesWithScores);
 });
 
 // @desc    Like or pass a user
@@ -137,6 +207,7 @@ const getMatches = asyncHandler(async (req, res) => {
 
 module.exports = {
     getFeed,
+    getQuickMatches,
     swipeAction,
     getMatches
 };

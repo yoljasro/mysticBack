@@ -7,6 +7,7 @@ const auth = require('../middleware/auth');
 // @route   GET /api/matches/feed
 // @access  Private
 router.get('/feed', auth, matchController.getFeed);
+router.get('/quick', auth, matchController.getQuickMatches);
 
 // @desc    Swipe on a user (like/pass)
 // @route   POST /api/matches/action

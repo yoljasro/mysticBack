@@ -25,6 +25,26 @@ Retrieves a list of users that the current user hasn't liked or passed yet.
 ]
 ```
 
+## 1.1. Get Quick Matches (Sort by Compatibility)
+Similar to feed, but returns users sorted by their compatibility score (highest first). Useful for the "List" view in Figma.
+
+- **URL:** `/api/matches/quick`
+- **Method:** `GET`
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+```json
+[
+  {
+    "_id": "60a7c4f5...",
+    "name": "User 1",
+    "avatar": "/uploads/avatar1.jpg",
+    "compatibilityScore": 87,
+    ...
+  },
+  ...
+]
+```
+
 ## 2. Swipe (Like / Pass)
 Records the user's swipe action on another user.
 
