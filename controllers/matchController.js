@@ -54,7 +54,7 @@ const getFeed = asyncHandler(async (req, res) => {
         _id: { $nin: interactedUserIds },
         onboardingCompleted: true,
         hideProfile: false
-    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType');
+    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType dateOfBirth');
 
     // Add compatibility score to each user
     const feedWithScores = feedUsers.map(user => {
@@ -81,7 +81,7 @@ const getQuickMatches = asyncHandler(async (req, res) => {
         _id: { $nin: interactedUserIds },
         onboardingCompleted: true,
         hideProfile: false
-    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType');
+    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType dateOfBirth');
 
     const matchesWithScores = potentialMatches.map(user => {
         const userObj = user.toObject();
@@ -205,9 +205,28 @@ const getMatches = asyncHandler(async (req, res) => {
     res.json(uniqueMatches);
 });
 
+// @desc    Get all users who liked the current user but no match yet
+// @route   GET /api/matches/likes-received
+// @access  Private
+const getLikesReceived = asyncHandler(async (req, res) => {
+    const currentUserId = req.user.id;
+
+    // Find interactions where current user is the recipient, action is 'like', and it's NOT a match yet
+    const interactions = await Interaction.find({
+        recipient: currentUserId,
+        action: 'like',
+        isMatch: false
+    }).populate('requester', 'name avatar nickname ageRange dateOfBirth gender bio photos');
+
+    const usersWhoLiked = interactions.map(i => i.requester);
+
+    res.json(usersWhoLiked);
+});
+
 module.exports = {
     getFeed,
     getQuickMatches,
+    getLikesReceived,
     swipeAction,
     getMatches
 };
