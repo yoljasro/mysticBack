@@ -54,7 +54,8 @@ Returns a list of potential matches that the user hasn't seen yet.
     "compatibilityScore": 87,
     "photos": ["/uploads/img1.jpg", "/uploads/img2.jpg"],
     "ageRange": "22-26",
-    "gender": "female"
+    "gender": "female",
+    "dateOfBirth": "1998-05-20T00:00:00.000Z"
   }
 ]
 ```
@@ -110,7 +111,30 @@ Used for both Liking and Passing.
 
 ---
 
-### 4. My Matches
+### 4. Get Received Likes
+Returns a list of users who have liked you, but whom you haven't swiped on yet.
+
+- **URL:** `/matches/likes-received`
+- **Method:** `GET`
+- **Success Response:** `200 OK`
+```json
+[
+  {
+    "_id": "60a7c4...",
+    "name": "Maria",
+    "avatar": "/uploads/maria.jpg",
+    "nickname": "maria_99",
+    "dateOfBirth": "1999-03-15T00:00:00.000Z",
+    "gender": "female",
+    "bio": "Hi there! ✨",
+    "photos": ["..."]
+  }
+]
+```
+
+---
+
+### 5. My Matches
 Returns only the people you have successfully matched with.
 
 - **URL:** `/matches`
