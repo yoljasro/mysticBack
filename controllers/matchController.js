@@ -125,16 +125,37 @@ const swipeAction = asyncHandler(async (req, res) => {
 
     let isMatch = false;
     let chatRoom = null;
+    let compatibilityScore = null;
 
     if (action === 'like' && recipientInteraction) {
         // It's a match!
         isMatch = true;
 
-        // Update both interactions to reflect the match
+        // Fetch users to calculate compatibility
+        const requester = await User.findById(requesterId);
+        const recipient = await User.findById(recipientId);
+        compatibilityScore = calculateCompatibility(requester, recipient);
+
+        // Update both interactions to reflect the match and score
         recipientInteraction.isMatch = true;
+        recipientInteraction.compatibilityScore = compatibilityScore;
         await recipientInteraction.save();
 
-        // Automatically create a one-on-one chat room (using existing Chat model if it supports standard 1-on-1)
+        // Emit socket event to the person who liked first
+        const io = req.app.get("io");
+        if (io) {
+            io.to(recipientId.toString()).emit("match received", {
+                user: {
+                    _id: requester._id,
+                    name: requester.name,
+                    avatar: requester.avatar,
+                    nickname: requester.nickname
+                },
+                compatibilityScore: compatibilityScore
+            });
+        }
+
+        // Automatically create a one-on-one chat room
         chatRoom = await Chat.findOne({
             isGroupChat: false,
             $and: [
@@ -157,12 +178,14 @@ const swipeAction = asyncHandler(async (req, res) => {
         requester: requesterId,
         recipient: recipientId,
         action: action,
-        isMatch: isMatch
+        isMatch: isMatch,
+        compatibilityScore: compatibilityScore || 0
     });
 
     res.status(201).json({
         message: isMatch ? 'It is a match!' : 'Swiped successfully',
         isMatch: isMatch,
+        compatibilityScore: compatibilityScore,
         chat: chatRoom ? chatRoom : null
     });
 });
@@ -185,17 +208,20 @@ const getMatches = asyncHandler(async (req, res) => {
 
     // Extract the profile of the matched user (not the current user)
     const matchedProfiles = matches.map(match => {
+        let profile;
         if (match.requester._id.toString() === currentUserId.toString()) {
-            return match.recipient;
+            profile = match.recipient.toObject();
         } else {
-            return match.requester;
+            profile = match.requester.toObject();
         }
+        profile.compatibilityScore = match.compatibilityScore;
+        return profile;
     });
 
     // Remove duplicates if the query happens to fetch reciprocal pairs 
     const uniqueMatchIds = new Set();
     const uniqueMatches = [];
-    mappedProfiles = matchedProfiles.filter(profile => {
+    matchedProfiles.forEach(profile => {
         if (!uniqueMatchIds.has(profile._id.toString())) {
             uniqueMatchIds.add(profile._id.toString());
             uniqueMatches.push(profile);

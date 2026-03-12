@@ -19,6 +19,10 @@ const interactionSchema = new mongoose.Schema({
     isMatch: {
         type: Boolean,
         default: false
+    },
+    compatibilityScore: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 
