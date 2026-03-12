@@ -30,6 +30,14 @@ const matchRoutes = require('./routes/match');
 app.use('/api/profile', profileRoutes);
 app.use('/api/matches', matchRoutes);
 
+app.get('/', (req, res) => {
+    res.send('API is running...');
+});
+
+app.get('/api', (req, res) => {
+    res.send('Welcome to the API. Please use specific endpoints.');
+});
+
 // Database Connection
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/mystic';
