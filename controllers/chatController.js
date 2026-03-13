@@ -408,6 +408,12 @@ exports.markAsRead = async (req, res) => {
             { $addToSet: { readBy: req.user._id } }
         );
 
+        // Send "messages read" event via WebSocket
+        const io = req.app.get("io");
+        if (io) {
+            io.in(chatId).emit("messages read", { chatId: chatId, userId: req.user._id });
+        }
+
         res.status(200).json({ message: "Messages marked as read" });
     } catch (error) {
         res.status(400).send({ error: error.message });

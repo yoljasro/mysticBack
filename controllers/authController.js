@@ -54,7 +54,9 @@ exports.verifyOtp = async (req, res) => {
 
         if (user) {
             const token = generateToken(user._id);
-            res.status(200).json({ message: 'Login successful', token, user });
+            const userResponse = user.toObject();
+            delete userResponse.password;
+            res.status(200).json({ message: 'Login successful', token, user: userResponse });
         } else {
             res.status(200).json({ message: 'OTP verified. Proceed to registration.', isNewUser: true });
         }
@@ -106,7 +108,10 @@ exports.register = async (req, res) => {
         await newUser.save();
 
         const token = generateToken(newUser._id);
-        res.status(201).json({ message: 'User registered successfully', token, user: newUser });
+        const userResponse = newUser.toObject();
+        delete userResponse.password;
+
+        res.status(201).json({ message: 'User registered successfully', token, user: userResponse });
 
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -122,7 +127,7 @@ exports.login = async (req, res) => {
         // Find user by email OR phone
         const user = await User.findOne({
             $or: [{ email: email }, { phone: email }]
-        });
+        }).select('+password');
 
         if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
@@ -134,7 +139,10 @@ exports.login = async (req, res) => {
         if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
         const token = generateToken(user._id);
-        res.status(200).json({ message: 'Login successful', token, user });
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        res.status(200).json({ message: 'Login successful', token, user: userResponse });
 
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -178,7 +186,10 @@ exports.googleLogin = async (req, res) => {
         }
 
         const token = generateToken(user._id);
-        res.status(200).json({ message: 'Google login successful', token, user });
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        res.status(200).json({ message: 'Google login successful', token, user: userResponse });
 
     } catch (error) {
         console.error(error);
@@ -192,6 +203,35 @@ exports.appleLogin = async (req, res) => {
         res.status(501).json({ message: 'Apple Login not fully implemented (requires Apple Developer Keys)' });
     } catch (error) {
         res.status(500).json({ message: 'Apple Auth Failed', error: error.message });
+    }
+};
+
+exports.changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            return res.status(400).json({ message: 'Old and new passwords are required' });
+        }
+
+        const user = await User.findById(req.user._id).select('+password');
+
+        if (!user.password) {
+            return res.status(400).json({ message: 'User does not have a local password (social auth)' });
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid old password' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 };
 

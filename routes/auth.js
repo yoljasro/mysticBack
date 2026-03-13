@@ -26,4 +26,7 @@ router.post('/google', authController.googleLogin);
 // POST /api/auth/apple
 router.post('/apple', authController.appleLogin);
 
+// PUT /api/auth/change-password
+router.put('/change-password', auth, authController.changePassword);
+
 module.exports = router;
