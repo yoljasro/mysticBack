@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+
 const app = express();
 
 // Middleware
@@ -59,13 +60,19 @@ const server = mongoose.connect(MONGO_URI)
 
         app.set('io', io);
 
+        let onlineUsers = {}; // socket.id -> userId
+
         io.on("connection", (socket) => {
             console.log("Connected to socket.io");
 
             socket.on("setup", (userData) => {
                 socket.join(userData._id);
+                onlineUsers[socket.id] = userData._id;
                 console.log("User joined setup room: ", userData._id);
                 socket.emit("connected");
+
+                // Emit unique user IDs to all clients
+                io.emit("get online users", Array.from(new Set(Object.values(onlineUsers))));
             });
 
             socket.on("join chat", (room) => {
@@ -76,10 +83,10 @@ const server = mongoose.connect(MONGO_URI)
             socket.on("typing", (room) => socket.in(room).emit("typing"));
             socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 
-
-
             socket.on("disconnect", () => {
                 console.log("USER DISCONNECTED");
+                delete onlineUsers[socket.id];
+                io.emit("get online users", Array.from(new Set(Object.values(onlineUsers))));
             });
         });
 
