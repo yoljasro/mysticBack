@@ -27,9 +27,11 @@ app.use('/api/natal', natalRoutes);
 app.use('/api/lunar', lunarRoutes);
 const profileRoutes = require('./routes/profile');
 const matchRoutes = require('./routes/match');
+const tarotRoutes = require('./routes/tarot');
 
 app.use('/api/profile', profileRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/tarot', tarotRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');
