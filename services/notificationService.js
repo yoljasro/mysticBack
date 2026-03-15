@@ -1,46 +1,30 @@
-const admin = require('firebase-admin');
+const { Expo } = require('expo-server-sdk');
 
-// Initialize Firebase Admin SDK
-// You need to place your serviceAccountKey.json in the root directory
-try {
-    const serviceAccount = require('../../serviceAccountKey.json');
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-    console.log("Firebase Admin initialized");
-} catch (error) {
-    console.warn("Firebase Admin NOT initialized: serviceAccountKey.json missing or invalid.");
-}
+const expo = new Expo();
 
 exports.sendPushNotification = async (tokens, notification) => {
-    if (!admin.apps.length) {
-        console.warn("Skipping push notification: Firebase Admin not initialized.");
+    // Faqat Expo tokenlarni filterlash
+    const validTokens = tokens.filter(t => Expo.isExpoPushToken(t));
+
+    if (validTokens.length === 0) {
         return;
     }
 
-    const message = {
-        notification: {
-            title: notification.title,
-            body: notification.body,
-        },
+    const messages = validTokens.map(token => ({
+        to: token,
+        sound: 'default',
+        title: notification.title,
+        body: notification.body,
         data: notification.data || {},
-        tokens: tokens,
-    };
+    }));
 
-    try {
-        const response = await admin.messaging().sendMulticast(message);
-        console.log(`${response.successCount} messages were sent successfully`);
+    const chunks = expo.chunkPushNotifications(messages);
 
-        if (response.failureCount > 0) {
-            const failedTokens = [];
-            response.responses.forEach((resp, idx) => {
-                if (!resp.success) {
-                    failedTokens.push(tokens[idx]);
-                }
-            });
-            console.log('List of tokens that caused failures: ' + failedTokens);
+    for (const chunk of chunks) {
+        try {
+            await expo.sendPushNotificationsAsync(chunk);
+        } catch (error) {
+            console.error('Push notification error:', error);
         }
-    } catch (error) {
-        console.error("Error sending push notification:", error);
     }
 };

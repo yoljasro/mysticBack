@@ -253,3 +253,16 @@ exports.searchUsers = async (req, res) => {
         res.status(500).json({ message: 'Search failed', error: error.message });
     }
 };
+
+exports.deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({ message: 'Account deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+

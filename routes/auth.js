@@ -29,4 +29,7 @@ router.post('/apple', authController.appleLogin);
 // PUT /api/auth/change-password
 router.put('/change-password', auth, authController.changePassword);
 
+// DELETE /api/auth/delete-account
+router.delete('/delete-account', auth, authController.deleteAccount);
+
 module.exports = router;

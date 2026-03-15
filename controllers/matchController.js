@@ -237,11 +237,17 @@ const getMatches = asyncHandler(async (req, res) => {
 const getLikesReceived = asyncHandler(async (req, res) => {
     const currentUserId = req.user.id;
 
-    // Find interactions where current user is the recipient, action is 'like', and it's NOT a match yet
+    // Find all users the current user has already interacted with
+    const myInteractions = await Interaction.find({ requester: currentUserId });
+    const interactedUserIds = myInteractions.map(i => i.recipient.toString());
+
+    // Find interactions where current user is the recipient, action is 'like', it's NOT a match yet,
+    // and the current user has NOT interacted back with the requester
     const interactions = await Interaction.find({
         recipient: currentUserId,
         action: 'like',
-        isMatch: false
+        isMatch: false,
+        requester: { $nin: interactedUserIds }
     }).populate('requester', 'name avatar nickname ageRange dateOfBirth gender bio photos');
 
     const usersWhoLiked = interactions.map(i => i.requester);
