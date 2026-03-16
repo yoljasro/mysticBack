@@ -15,6 +15,12 @@ router.put('/groupadd', auth, chatController.addToGroup);
 router.delete('/:chatId', auth, chatController.deleteChat);
 router.put('/markAsRead/:chatId', auth, chatController.markAsRead);
 router.delete('/messages/clear/:chatId', auth, chatController.clearMessages);
+
+// Block/Mute routes
+router.put('/block', auth, chatController.blockUser);
+router.put('/unblock', auth, chatController.unblockUser);
+router.put('/mute/:chatId', auth, chatController.muteChat);
+router.put('/unmute/:chatId', auth, chatController.unmuteChat);
 // Message routes
 router.get('/messages/:chatId', auth, chatController.allMessages);
 router.post('/messages', auth, upload.array('attachments', 10), chatController.sendMessage);

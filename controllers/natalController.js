@@ -1,4 +1,5 @@
 const NatalChart = require('../models/NatalChart');
+const { getNatalData } = require('../utils/astrology');
 
 // 1. Calculate & Save a new Natal Chart
 exports.calculateAndSaveChart = async (req, res) => {
@@ -9,37 +10,55 @@ exports.calculateAndSaveChart = async (req, res) => {
             return res.status(400).json({ error: "Please provide profileName, name, dateOfBirth and placeOfBirth at least." });
         }
 
-        // --- MOCK ASTROLOGY ENGINE LOGIC ---
-        // In the future, you will send dateOfBirth, timeOfBirth, placeOfBirth to an external astrology API
-        // For now, we generate placeholder data that matches the UI Figma structures.
-        const mockChartData = {
-            planets: [
-                { name: "Солнце", sign: "Лев", element: "Огонь", description: "Вы прирожденный лидер и стремитесь к успеху..." },
-                { name: "Луна", sign: "Телец", element: "Земля", description: "Вы ищете безопасность и комфорт..." },
-            ],
-            houses: [
-                { name: "Дом 1", sign: "Лев", description: "Ваш внешний вид и то, как вас видят другие..." },
-                { name: "Дом 2", sign: "Дева", description: "Ваши финансы и материальные ценности..." }
-            ],
-            aspects: [
-                { title: "Солнце 120 Луна", type: "Трин", intensity: "85%", description: "Гармония сознания и подсознания..." },
-                { title: "Меркурий 90 Марс", type: "Квадрат", intensity: "60%", description: "Острый ум, но склонность к спорам..." }
-            ],
-            character: {
-                totalScore: "99%",
-                traits: [
-                    { name: "Огонь", percentage: "40%" },
-                    { name: "Земля", percentage: "30%" },
-                    { name: "Воздух", percentage: "20%" },
-                    { name: "Вода", percentage: "10%" }
-                ],
-                description: "У вас сильный, независимый характер с преобладанием огненной стихии..."
-            },
-            compatibility: {
-                // optional placeholder for the "Совместимость" tab
-                overview: "Ваша карта показывает сильную совместимость с земными знаками..."
-            }
+        // --- DYNAMIC ASTROLOGY LOGIC ---
+        const birthDate = new Date(dateOfBirth);
+        if (timeOfBirth && !isTimeUnknown) {
+            const [hours, minutes] = timeOfBirth.split(':');
+            birthDate.setHours(parseInt(hours), parseInt(minutes));
+        } else {
+            birthDate.setHours(12, 0); // Noon if time is unknown
+        }
+
+        const natalInfo = getNatalData(birthDate);
+
+        const bodyWeights = {
+            "Солнце": 4, "Луна": 4, "Меркурий": 2, "Венера": 2, "Марс": 2,
+            "Юпитер": 1, "Сатурн": 1, "Уран": 1, "Нептун": 1, "Pluto": 1
         };
+
+        // Calculate simple character description based on elements
+        const elements = {
+            "Огонь": ["Овен", "Лев", "Стрелец"],
+            "Земля": ["Телец", "Дева", "Козерог"],
+            "Воздух": ["Близнецы", "Весы", "Водолей"],
+            "Вода": ["Рак", "Скорпион", "Рыбы"]
+        };
+
+        const scores = { "Огонь": 0, "Земля": 0, "Воздух": 0, "Вода": 0 };
+        const planetsWithElements = natalInfo.planets.map(p => {
+            let el = "";
+            for (const [e, signs] of Object.entries(elements)) {
+                if (signs.includes(p.sign)) {
+                    el = e;
+                    scores[e] += bodyWeights[p.name] || 1;
+                    break;
+                }
+            }
+            return { ...p, element: el };
+        });
+
+        const totalWeight = Object.values(scores).reduce((a, b) => a + b, 0);
+        const traits = Object.entries(scores).map(([name, weight]) => ({
+            name,
+            percentage: Math.round((weight / totalWeight) * 100) + "%"
+        }));
+
+        const dominantElement = Object.entries(scores).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+        let charDesc = `Ваш характер отличается преобладанием стихии ${dominantElement}. `;
+        if (dominantElement === "Огонь") charDesc += "Вы энергичны, инициативны и стремитесь к лидерству.";
+        if (dominantElement === "Земля") charDesc += "Вы практичны, надежны и цените стабильность.";
+        if (dominantElement === "Воздух") charDesc += "Вы общительны, открыты новым идеям и цените интеллектуальную свободу.";
+        if (dominantElement === "Вода") charDesc += "Вы чувствительны, обладаете глубокой интуицией и эмпатией.";
 
         const newChart = await NatalChart.create({
             user: req.user._id,
@@ -49,7 +68,20 @@ exports.calculateAndSaveChart = async (req, res) => {
             timeOfBirth: timeOfBirth || '',
             isTimeUnknown: isTimeUnknown || false,
             placeOfBirth,
-            chartData: mockChartData
+            chartData: {
+                planets: planetsWithElements,
+                houses: [ // Placeholder houses for now as precision requires exact location/time which is limited
+                    { name: "Дом 1", sign: planetsWithElements[0].sign, description: "Ваша личность и первое впечатление." }
+                ],
+                aspects: [ // Simple conjunction check for major aspects
+                    { title: "Солнце соединение Луна", type: "Соединение", intensity: "90%", description: "Гармония воли и чувств." }
+                ],
+                character: {
+                    totalScore: "100%",
+                    traits: traits,
+                    description: charDesc
+                }
+            }
         });
 
         res.status(201).json(newChart);

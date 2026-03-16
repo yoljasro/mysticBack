@@ -1,8 +1,27 @@
 const LunarDay = require('../models/LunarDay');
 const User = require('../models/User');
+const { getMoonPhaseName, getZodiacSignFromLongitude } = require('../utils/astrology');
+const Astronomy = require('astronomy-engine');
 
 // Helper to generate a dummy LunarDay if it doesn't exist in DB
 const generateMockLunarDay = async (dateStr) => {
+    const date = new Date(dateStr);
+    const observer = new Astronomy.Observer(0, 0, 0);
+    const astroTime = new Astronomy.Time(date);
+
+    // Get Moon position
+    const equat = Astronomy.Equator(Astronomy.Body.Moon, astroTime, observer, true, true);
+    const ecliptic = Astronomy.Ecliptic(equat);
+    const moonSign = getZodiacSignFromLongitude(ecliptic.elon);
+    const moonPhase = getMoonPhaseName(date);
+
+    // Tip of the day based on moon phase
+    let tip = "Хороший день для планирования.";
+    if (moonPhase === "Новолуние") tip = "Начинайте новые дела и ставьте цели.";
+    if (moonPhase === "Полнолуние") tip = "Будьте осторожны с эмоциями, лучше отдохнуть.";
+    if (moonPhase.includes("Убывающая")) tip = "Завершайте начатые проекты, очищайте пространство.";
+    if (moonPhase.includes("Растущая")) tip = "Хорошее время для роста и обучения.";
+
     const defaultPractices = [
         { type: "Медитация", title: "Очищение энергии", description: "Сядьте в удобную позу и сфокусируйтесь на дыхании..." },
         { type: "Чек-лист", title: "Очищение пространства", description: "Уберите лишние вещи с рабочего стола..." },
@@ -11,15 +30,15 @@ const generateMockLunarDay = async (dateStr) => {
 
     const newDay = new LunarDay({
         date: dateStr,
-        moonPhase: "Растущая Луна",
-        zodiacSign: "Рак",
-        lunarDayNumber: Math.floor(Math.random() * 29) + 1, // Random number between 1-29
+        moonPhase: moonPhase,
+        zodiacSign: moonSign,
+        lunarDayNumber: Math.floor(Math.random() * 29) + 1, // Lunar day number still random as it's complex to calculate exactly without more time
         scores: {
             health: Math.floor(Math.random() * 100),
             work: Math.floor(Math.random() * 100),
             relationships: Math.floor(Math.random() * 100),
         },
-        tipOfTheDay: "Не лучший день для начала новых проектов, лучше завершить старые дела.",
+        tipOfTheDay: tip,
         practices: defaultPractices
     });
 

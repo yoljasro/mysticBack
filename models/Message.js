@@ -18,7 +18,9 @@ const messageSchema = new mongoose.Schema({
         ref: 'User'
     }],
     attachments: [{
-        type: String // URLs to images/videos
+        url: String,
+        name: String,
+        extension: String
     }]
 }, { timestamps: true });
 

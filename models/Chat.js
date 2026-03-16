@@ -24,6 +24,11 @@ const chatSchema = new mongoose.Schema({
     groupImage: {
         type: String,
         default: ""
+    },
+    clearedAt: {
+        type: Map,
+        of: Date,
+        default: {}
     }
 }, { timestamps: true });
 

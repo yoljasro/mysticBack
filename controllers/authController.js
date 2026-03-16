@@ -3,6 +3,7 @@ const Otp = require('../models/Otp');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const { getZodiacSign } = require('../utils/astrology');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -53,6 +54,10 @@ exports.verifyOtp = async (req, res) => {
         await Otp.deleteOne({ _id: otpRecord._id });
 
         if (user) {
+            if (user.dateOfBirth && !user.zodiacSign) {
+                user.zodiacSign = getZodiacSign(user.dateOfBirth);
+                await user.save();
+            }
             const token = generateToken(user._id);
             const userResponse = user.toObject();
             delete userResponse.password;
@@ -102,7 +107,8 @@ exports.register = async (req, res) => {
             phone,
             avatar,
             isVerified: true,
-            authProvider: 'local'
+            authProvider: 'local',
+            zodiacSign: dateOfBirth ? getZodiacSign(dateOfBirth) : ''
         });
 
         await newUser.save();
@@ -142,6 +148,11 @@ exports.login = async (req, res) => {
         const userResponse = user.toObject();
         delete userResponse.password;
 
+        if (user.dateOfBirth && !userResponse.zodiacSign) {
+            userResponse.zodiacSign = getZodiacSign(user.dateOfBirth);
+            await User.findByIdAndUpdate(user._id, { zodiacSign: userResponse.zodiacSign });
+        }
+
         res.status(200).json({ message: 'Login successful', token, user: userResponse });
 
     } catch (error) {
@@ -180,7 +191,8 @@ exports.googleLogin = async (req, res) => {
                 avatar: picture,
                 authProvider: 'google',
                 isVerified: true,
-                phone: `google_${googleId}`
+                phone: `google_${googleId}`,
+                zodiacSign: '' // Will be updated when dateOfBirth is set
             });
             await user.save();
         }

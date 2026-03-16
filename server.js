@@ -62,19 +62,20 @@ const server = mongoose.connect(MONGO_URI)
 
         app.set('io', io);
 
-        let onlineUsers = {}; // socket.id -> userId
+        let onlineUsers = {}; // userId -> socket.id (simplified or map structure)
 
         io.on("connection", (socket) => {
             console.log("Connected to socket.io");
 
             socket.on("setup", (userData) => {
                 socket.join(userData._id);
-                onlineUsers[socket.id] = userData._id;
+                onlineUsers[userData._id] = socket.id;
+                app.set('onlineUsers', onlineUsers);
                 console.log("User joined setup room: ", userData._id);
                 socket.emit("connected");
 
                 // Emit unique user IDs to all clients
-                io.emit("get online users", Array.from(new Set(Object.values(onlineUsers))));
+                io.emit("get online users", Object.keys(onlineUsers));
             });
 
             socket.on("join chat", (room) => {
@@ -87,8 +88,15 @@ const server = mongoose.connect(MONGO_URI)
 
             socket.on("disconnect", () => {
                 console.log("USER DISCONNECTED");
-                delete onlineUsers[socket.id];
-                io.emit("get online users", Array.from(new Set(Object.values(onlineUsers))));
+                // Find and remove the user
+                for (let userId in onlineUsers) {
+                    if (onlineUsers[userId] === socket.id) {
+                        delete onlineUsers[userId];
+                        break;
+                    }
+                }
+                app.set('onlineUsers', onlineUsers);
+                io.emit("get online users", Object.keys(onlineUsers));
             });
         });
 

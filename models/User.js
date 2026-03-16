@@ -141,7 +141,19 @@ const userSchema = new mongoose.Schema({
     isOpenForReading: {
         type: Boolean,
         default: true
-    }
+    },
+    zodiacSign: {
+        type: String,
+        default: ''
+    },
+    blockedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    mutedChats: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Chat'
+    }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

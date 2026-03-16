@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const asyncHandler = require('express-async-handler');
 const upload = require('../middleware/upload');
+const { getZodiacSign } = require('../utils/astrology');
 
 // @desc    Get logged in user's profile
 // @route   GET /api/profile
@@ -24,6 +25,11 @@ const updateProfile = asyncHandler(async (req, res) => {
             updates[key] = req.body[key];
         }
     });
+
+    if (updates.dateOfBirth) {
+        updates.zodiacSign = getZodiacSign(updates.dateOfBirth);
+    }
+
     const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true, runValidators: true }).select('-password -__v');
     res.json(user);
 });
