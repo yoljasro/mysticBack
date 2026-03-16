@@ -63,7 +63,13 @@ const userSchema = new mongoose.Schema({
     location: {
         latitude: Number,
         longitude: Number,
-        address: String
+        address: String,
+        type: { type: String, enum: ['Point'], default: 'Point' },
+        coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]
+    },
+    timezone: {
+        type: String,
+        default: 'UTC+5'
     },
     searchRadius: {
         type: Number,
@@ -79,15 +85,26 @@ const userSchema = new mongoose.Schema({
     timeOfBirth: {
         type: String // Format HH:mm
     },
-    lookingFor: [{
-        type: String
-    }],
-    interests: [{
-        type: String
-    }],
-    photos: [{
-        type: String
-    }],
+    lookingFor: [String], // General categories
+    lookingForGoal: {
+        type: String,
+        enum: ['Серьезные отношения', 'Открытость к общению', 'Дружеское общение', 'Новый опыт'],
+        default: 'Открытость к общению'
+    },
+    interests: {
+        type: [String],
+        enum: [
+            'Йога', 'Медитация', 'Астрология', 'Таро', 'Психология',
+            'Путешествия', 'Искусство', 'Музыка', 'Книги', 'Спорт',
+            'Кино', 'Фотография', 'Кулинария', 'Танцы', 'Природа'
+        ]
+    },
+    searchSettings: {
+        radius: { type: Number, default: 50 },
+        minAge: { type: Number, default: 18 },
+        maxAge: { type: Number, default: 100 }
+    },
+    photos: [String],
     bio: {
         type: String,
         maxLength: 500
@@ -155,5 +172,7 @@ const userSchema = new mongoose.Schema({
         ref: 'Chat'
     }]
 }, { timestamps: true });
+
+userSchema.index({ "location.coordinates": "2dsphere" });
 
 module.exports = mongoose.model('User', userSchema);

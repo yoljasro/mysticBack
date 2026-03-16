@@ -72,17 +72,32 @@ exports.fetchChats = async (req, res) => {
             select: "name avatar email",
         });
 
-        // Calculate unreadCount for each chat
-        const chatsWithUnreadCount = await Promise.all(results.map(async (chat) => {
+        // Calculate unreadCount and metadata for each chat
+        const chatsWithMetadata = await Promise.all(results.map(async (chat) => {
             const unreadCount = await Message.countDocuments({
                 chat: chat._id,
                 sender: { $ne: req.user._id },
                 readBy: { $ne: req.user._id }
             });
-            return { ...chat._doc, unreadCount };
+
+            let metadata = {};
+            if (!chat.isGroupChat) {
+                const otherParticipant = chat.participants.find(p => p._id.toString() !== req.user._id.toString());
+                if (otherParticipant) {
+                    // We need a helper for matchController's calculation or just use a placeholder if not accessible
+                    // For now, let's just expose the zodiac and basic info
+                    metadata = {
+                        zodiacSign: otherParticipant.zodiacSign,
+                        // Compatibility is usually calculated on the fly or stored in matches. 
+                        // Let's assume we want to show it here.
+                    };
+                }
+            }
+
+            return { ...chat._doc, unreadCount, metadata };
         }));
 
-        res.status(200).send(chatsWithUnreadCount);
+        res.status(200).send(chatsWithMetadata);
     } catch (error) {
         res.status(400).send({ error: error.message });
     }

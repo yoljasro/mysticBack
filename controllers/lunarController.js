@@ -37,6 +37,7 @@ const generateMockLunarDay = async (dateStr) => {
             health: Math.floor(Math.random() * 100),
             work: Math.floor(Math.random() * 100),
             relationships: Math.floor(Math.random() * 100),
+            haircut: Math.floor(Math.random() * 100),
         },
         tipOfTheDay: tip,
         practices: defaultPractices

@@ -30,6 +30,10 @@ const natalChartSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    timezone: {
+        type: String,
+        default: ''
+    },
     // The calculated astrological data payload 
     chartData: {
         type: mongoose.Schema.Types.Mixed, // Storing unstructured JSON data for planets, houses, aspects, texts

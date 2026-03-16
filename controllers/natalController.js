@@ -4,7 +4,7 @@ const { getNatalData } = require('../utils/astrology');
 // 1. Calculate & Save a new Natal Chart
 exports.calculateAndSaveChart = async (req, res) => {
     try {
-        const { profileName, name, dateOfBirth, timeOfBirth, isTimeUnknown, placeOfBirth } = req.body;
+        const { profileName, name, dateOfBirth, timeOfBirth, isTimeUnknown, placeOfBirth, timezone } = req.body;
 
         if (!profileName || !name || !dateOfBirth || !placeOfBirth) {
             return res.status(400).json({ error: "Please provide profileName, name, dateOfBirth and placeOfBirth at least." });
@@ -68,19 +68,27 @@ exports.calculateAndSaveChart = async (req, res) => {
             timeOfBirth: timeOfBirth || '',
             isTimeUnknown: isTimeUnknown || false,
             placeOfBirth,
+            timezone: timezone || '',
             chartData: {
                 planets: planetsWithElements,
                 houses: [ // Placeholder houses for now as precision requires exact location/time which is limited
-                    { name: "Дом 1", sign: planetsWithElements[0].sign, description: "Ваша личность и первое впечатление." }
+                    { name: "House 1", sign: planetsWithElements[0].sign, description: "Your personality and first impression." }
                 ],
                 aspects: [ // Simple conjunction check for major aspects
-                    { title: "Солнце соединение Луна", type: "Соединение", intensity: "90%", description: "Гармония воли и чувств." }
+                    { title: "Sun Conjunction Moon", type: "Conjunction", intensity: "90%", description: "Harmony of will and feelings." }
                 ],
                 character: {
                     totalScore: "100%",
                     traits: traits,
+                    strongSide: "Ваша интуиция и умение сопереживать помогают вам строить глубокие связи.",
+                    watchOut: "Следите за тем, чтобы не терять свои границы в желании помочь другим.",
+                    dailyTip: "Сегодня отличный день для того, чтобы уделить время своим хобби.",
                     description: charDesc
-                }
+                },
+                visualChart: planetsWithElements.map(p => ({
+                    body: p.name,
+                    angle: Math.floor(Math.random() * 360) // Placeholder angle for the circular graphic
+                }))
             }
         });
 

@@ -3,37 +3,66 @@ const Interaction = require('../models/Interaction');
 const Chat = require('../models/Chat');
 const asyncHandler = require('express-async-handler');
 
-// Helper function to calculate compatibility percentage
+// Helper to calculate distance in KM
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return Math.round(R * c);
+};
+
+// Helper function to calculate compatibility percentage for different categories
 const calculateCompatibility = (user1, user2) => {
-    let score = 20; // Base compatibility
+    const calculateScore = (baseWeight, interestWeight, lookingForWeight, jungWeight) => {
+        let score = baseWeight;
 
-    // 1. Interests overlap (max 40%)
-    if (user1.interests && user2.interests) {
-        const commonInterests = user1.interests.filter(interest =>
-            user2.interests.includes(interest)
-        );
-        score += Math.min(commonInterests.length * 10, 40);
-    }
+        // 1. Interests overlap (max interestWeight)
+        if (user1.interests && user2.interests) {
+            const commonInterests = user1.interests.filter(interest =>
+                user2.interests.includes(interest)
+            );
+            score += Math.min(commonInterests.length * 5, interestWeight);
+        }
 
-    // 2. Looking For overlap (20%)
-    if (user1.lookingFor && user2.lookingFor) {
-        const commonLookingFor = user1.lookingFor.filter(item =>
-            user2.lookingFor.includes(item)
-        );
-        if (commonLookingFor.length > 0) score += 20;
-    }
+        // 2. Looking For overlap (max lookingForWeight)
+        if (user1.lookingFor && user2.lookingFor) {
+            const commonLookingFor = user1.lookingFor.filter(item =>
+                user2.lookingFor.includes(item)
+            );
+            if (commonLookingFor.length > 0) score += lookingForWeight;
+        }
 
-    // 3. Jung Type / Personality (20%)
-    if (user1.jungType && user2.jungType) {
-        // Simplified: if both have a type, they get a bonus for the feature's sake
-        score += 20;
-    }
+        // 4. Random variance (±5%)
+        const variance = Math.floor(Math.random() * 11) - 5;
+        score += variance;
 
-    // 4. Random variance for "mystic" feel (±5%)
-    const variance = Math.floor(Math.random() * 11) - 5;
-    score += variance;
+        return Math.min(Math.max(score, 10), 99);
+    };
 
-    return Math.min(Math.max(score, 10), 99); // Keep between 10% and 99%
+    const getSummary = (score, category) => {
+        if (score >= 80) return `У вас отличная совместимость в ${category}! Вы идеально дополняете друг друга.`;
+        if (score >= 50) return `У вас хорошая база для ${category}, но есть над чем работать.`;
+        return `Ваши взгляды на ${category} могут не совпадать, но это повод для диалога.`;
+    };
+
+    const overallScore = calculateScore(20, 30, 20, 20);
+    const loveScore = calculateScore(15, 25, 30, 25);
+    const friendshipScore = calculateScore(25, 40, 10, 20);
+    const workScore = calculateScore(20, 20, 10, 40);
+
+    return {
+        overall: overallScore,
+        categories: {
+            love: { score: loveScore, description: getSummary(loveScore, "любви") },
+            friendship: { score: friendshipScore, description: getSummary(friendshipScore, "дружбе") },
+            work: { score: workScore, description: getSummary(workScore, "работе") }
+        }
+    };
 };
 
 // @desc    Get user feed (potential matches)
@@ -49,17 +78,74 @@ const getFeed = asyncHandler(async (req, res) => {
 
     interactedUserIds.push(currentUserId.toString());
 
-    // Fetch potential matches
-    const feedUsers = await User.find({
+    // 5. Query filters from request or user settings
+    const minAge = req.query.minAge || currentUser.searchSettings?.minAge;
+    const maxAge = req.query.maxAge || currentUser.searchSettings?.maxAge;
+    const genderPreference = req.query.genderPreference;
+    const radius = req.query.radius || currentUser.searchSettings?.radius;
+    const zodiacSigns = req.query.zodiacSigns;
+    
+    const query = {
         _id: { $nin: interactedUserIds },
         onboardingCompleted: true,
         hideProfile: false
-    }).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType dateOfBirth');
+    };
 
-    // Add compatibility score to each user
+    if (minAge || maxAge) {
+        // Simple age calc for filter (dateOfBirth range)
+        const today = new Date();
+        if (minAge) {
+            const minDate = new Date();
+            minDate.setFullYear(today.getFullYear() - parseInt(minAge));
+            query.dateOfBirth = { ...query.dateOfBirth, $lte: minDate };
+        }
+        if (maxAge) {
+            const maxDate = new Date();
+            maxDate.setFullYear(today.getFullYear() - parseInt(maxAge));
+            query.dateOfBirth = { ...query.dateOfBirth, $gte: maxDate };
+        }
+    }
+
+    if (genderPreference && genderPreference !== 'all') {
+        query.gender = genderPreference;
+    }
+
+    if (zodiacSigns) {
+        const signs = Array.isArray(zodiacSigns) ? zodiacSigns : [zodiacSigns];
+        query.zodiacSign = { $in: signs };
+    }
+
+    // Geospatial search
+    if (radius && currentUser.location && currentUser.location.coordinates) {
+        query["location.coordinates"] = {
+            $near: {
+                $geometry: {
+                    type: "Point",
+                    coordinates: currentUser.location.coordinates
+                },
+                $maxDistance: parseInt(radius) * 1000 // Convert km to meters
+            }
+        };
+    }
+
+    // Fetch potential matches
+    const feedUsers = await User.find(query).select('name avatar bio photos ageRange gender nickname location interests lookingFor jungType dateOfBirth zodiacSign');
+
+    // Add compatibility score and distance to each user
     const feedWithScores = feedUsers.map(user => {
         const userObj = user.toObject();
-        userObj.compatibilityScore = calculateCompatibility(currentUser, user);
+        const compatibility = calculateCompatibility(currentUser, user);
+        userObj.compatibility = compatibility;
+        userObj.compatibilityScore = compatibility.overall;
+        
+        // Calculate distance if coordinates exist
+        if (currentUser.location?.coordinates && user.location?.coordinates) {
+            const [lon1, lat1] = currentUser.location.coordinates;
+            const [lon2, lat2] = user.location.coordinates;
+            // Native distance calc or simplified
+            userObj.distance = calculateDistance(lat1, lon1, lat2, lon2);
+        }
+
         return userObj;
     });
 
@@ -85,7 +171,9 @@ const getQuickMatches = asyncHandler(async (req, res) => {
 
     const matchesWithScores = potentialMatches.map(user => {
         const userObj = user.toObject();
-        userObj.compatibilityScore = calculateCompatibility(currentUser, user);
+        const compatibility = calculateCompatibility(currentUser, user);
+        userObj.compatibility = compatibility;
+        userObj.compatibilityScore = compatibility.overall;
         return userObj;
     });
 

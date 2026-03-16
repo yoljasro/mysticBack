@@ -22,7 +22,8 @@ const lunarDaySchema = new mongoose.Schema({
     scores: {
         health: { type: Number, default: 0 }, // 0 to 100
         work: { type: Number, default: 0 },
-        relationships: { type: Number, default: 0 }
+        relationships: { type: Number, default: 0 },
+        haircut: { type: Number, default: 0 }
     },
     tipOfTheDay: {
         type: String, // e.g. "Совет дня: Не лучший день для конфликтов..."

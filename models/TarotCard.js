@@ -11,18 +11,22 @@ const tarotCardSchema = new mongoose.Schema({
         required: true
     },
     loveForecast: {
-        strength: {
-            type: String, // e.g., 'Глубина', 'Страсть', etc.
-            required: true
-        },
-        focus: {
-            type: String, // e.g., 'Эмоции', 'Стабильность', etc.
-            required: true
-        },
-        tipOfTheDay: {
-            type: String, // e.g., 'Не колебаться, если захочешь написать первой'
-            required: true
-        }
+        description: String,
+        strongPoint: String,
+        watchOut: String,
+        tipOfTheDay: String
+    },
+    careerForecast: {
+        description: String,
+        strongPoint: String,
+        watchOut: String,
+        tipOfTheDay: String
+    },
+    healthForecast: {
+        description: String,
+        strongPoint: String,
+        watchOut: String,
+        tipOfTheDay: String
     },
     image: {
         type: String, // URL to the image of the card
