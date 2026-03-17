@@ -46,7 +46,7 @@ const getNatalData = (date, lat = 0, lon = 0) => {
     const observer = new Astronomy.Observer(lat, lon, 0);
     const time = Astronomy.Seasons(date.getFullYear()).mar_equinox; // Just a placeholder time object base
     // Actually we need a proper Astronomy.Time object
-    const astroTime = new Astronomy.Time(date);
+    const astroTime = Astronomy.MakeTime(date);
 
     const bodies = [
         Astronomy.Body.Sun, Astronomy.Body.Moon, Astronomy.Body.Mercury,
@@ -64,7 +64,7 @@ const getNatalData = (date, lat = 0, lon = 0) => {
 
     const planets = bodies.map(body => {
         const equat = Astronomy.Equator(body, astroTime, observer, true, true);
-        const ecliptic = Astronomy.Ecliptic(equat);
+        const ecliptic = Astronomy.Ecliptic(equat.vec);
         return {
             name: bodyNames[body] || body,
             sign: getZodiacSignFromLongitude(ecliptic.elon),

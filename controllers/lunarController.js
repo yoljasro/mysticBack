@@ -7,11 +7,11 @@ const Astronomy = require('astronomy-engine');
 const generateMockLunarDay = async (dateStr) => {
     const date = new Date(dateStr);
     const observer = new Astronomy.Observer(0, 0, 0);
-    const astroTime = new Astronomy.Time(date);
+    const astroTime = Astronomy.MakeTime(date);
 
     // Get Moon position
     const equat = Astronomy.Equator(Astronomy.Body.Moon, astroTime, observer, true, true);
-    const ecliptic = Astronomy.Ecliptic(equat);
+    const ecliptic = Astronomy.Ecliptic(equat.vec);
     const moonSign = getZodiacSignFromLongitude(ecliptic.elon);
     const moonPhase = getMoonPhaseName(date);
 
