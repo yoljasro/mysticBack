@@ -75,7 +75,7 @@ const getNatalData = (date, lat = 0, lon = 0) => {
     // Simple House calculation (Equal House System for simplicity as astronomy-engine doesn't have built-in Placidus)
     // We need Sidereal Time for precise houses, but let's approximate or just use signs for now if we don't want too much complexity.
     // For a real "Natal Chart", houses are critical.
-    
+
     return { planets };
 };
 
