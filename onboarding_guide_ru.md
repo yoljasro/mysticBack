@@ -94,6 +94,36 @@
 
 ---
 
+### 4. Тест личности Юнга (Jung Personality Test)
+Используется для определения темперамента пользователя (Холерик, Сангвиник, Флегматик, Меланхолик).
+
+- **URL:** `/api/onboarding/jung-test`
+- **Метод:** `POST`
+- **Запрос (Body - JSON):**
+```json
+{
+    "answers": ["A", "B", "C", "D", "A", "B", "B", "C", "D", "A", "A", "B", "C", "D", "A", "B", "C", "D", "A", "B"]
+}
+```
+*Примечание: массив `answers` должен содержать ровно 20 ответов (A, B, C или D).*
+
+- **Успешный ответ (200 OK):**
+```json
+{
+    "message": "Jung testi muvaffaqiyatli saqlandi.",
+    "jungType": "A",
+    "label": "Холерик",
+    "scores": {
+        "choleric": 7,
+        "sanguine": 5,
+        "phlegmatic": 4,
+        "melancholic": 4
+    }
+}
+```
+
+---
+
 ## 📋 Описание полей модели User (Onboarding)
 
 | Поле | Тип | Описание |

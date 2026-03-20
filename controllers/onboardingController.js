@@ -1,4 +1,35 @@
 const User = require('../models/User');
+const { getZodiacSign } = require('../utils/astrology');
+
+// ─── Jung temperament scoring helper ────────────────────────────────────────
+const TEMPERAMENT_LABELS = {
+    A: 'Холерик',
+    B: 'Сангвиник',
+    C: 'Флегматик',
+    D: 'Меланхолик',
+};
+
+function calculateTemperament(userAnswers) {
+    const scores = { A: 0, B: 0, C: 0, D: 0 };
+    userAnswers.forEach(ans => {
+        const key = String(ans).toUpperCase();
+        if (scores[key] !== undefined) scores[key]++;
+    });
+
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    const dominant = sorted[0][0];
+
+    return {
+        type: dominant,
+        label: TEMPERAMENT_LABELS[dominant],
+        scores: {
+            choleric: scores.A,
+            sanguine: scores.B,
+            phlegmatic: scores.C,
+            melancholic: scores.D,
+        },
+    };
+}
 
 // Update user profile for a specific onboarding step or general update
 exports.updateProfile = async (req, res) => {
@@ -30,6 +61,12 @@ exports.updateProfile = async (req, res) => {
                 req.user[update] = req.body[update];
             }
         });
+
+        // Auto-calculate zodiacSign when dateOfBirth is provided
+        if (req.body.dateOfBirth) {
+            req.user.zodiacSign = getZodiacSign(new Date(req.body.dateOfBirth));
+        }
+
 
         // 6 photos/videos validation if onboarding is being completed
         if (req.body.onboardingCompleted === true || req.body.onboardingStep === 9) {
@@ -96,4 +133,42 @@ exports.getOnboardingStatus = async (req, res) => {
         onboardingStep: req.user.onboardingStep,
         onboardingCompleted: req.user.onboardingCompleted
     });
+};
+
+// POST /api/onboarding/jung-test
+// Body: { answers: ['A','B','C', ...] }  — 20 answers from the Jung personality test
+exports.submitJungTest = async (req, res) => {
+    try {
+        const { answers } = req.body;
+
+        if (!Array.isArray(answers) || answers.length !== 20) {
+            return res.status(400).json({
+                error: 'answers massivi kerak va u 20 ta javobdan iborat bo\'lishi kerak.'
+            });
+        }
+
+        const validOptions = ['A', 'B', 'C', 'D'];
+        const allValid = answers.every(a => validOptions.includes(String(a).toUpperCase()));
+        if (!allValid) {
+            return res.status(400).json({
+                error: 'Har bir javob faqat A, B, C yoki D bo\'lishi kerak.'
+            });
+        }
+
+        const result = calculateTemperament(answers);
+
+        // Persist on the user document
+        req.user.jungType = result.type;          // e.g. "A"
+        req.user.personalityType = result.label;  // e.g. "Холерик"
+        await req.user.save();
+
+        return res.status(200).json({
+            message: 'Jung testi muvaffaqiyatli saqlandi.',
+            jungType: result.type,
+            label: result.label,
+            scores: result.scores,
+        });
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
 };

@@ -242,9 +242,29 @@ exports.sendMessage = async (req, res) => {
         const chat = await Chat.findById(chatId).populate("participants", "name avatar email deviceToken blockedUsers mutedChats");
         if (!chat) return res.status(404).send({ error: "Chat Not Found" });
 
+        const senderId = req.user._id.toString();
+
+        // Check if sender is blocked by any participant or has blocked any participant
+        const isBlocked = chat.participants.some(participant => {
+            const pId = participant._id.toString();
+            if (pId === senderId) return false; // Don't check against self
+
+            // Participant blocked the sender
+            if (participant.blockedUsers && participant.blockedUsers.includes(req.user._id)) return true;
+
+            // Sender blocked the participant
+            if (req.user.blockedUsers && req.user.blockedUsers.includes(pId)) return true;
+
+            return false;
+        });
+
+        if (isBlocked) {
+            return res.status(403).json({ error: "Cannot send message. One of the participants has blocked the other." });
+        }
+
         // Check if sender is blocked by any participant (mostly for 1-on-1)
         // For simplicity, we check if the recipient has blocked the sender
-        const senderId = req.user._id.toString();
+        // const senderId = req.user._id.toString(); // Removed duplicate
 
         const attachments = [];
         if (req.files) {
@@ -352,8 +372,27 @@ exports.sendVoiceMessage = async (req, res) => {
         message = await message.populate("chat");
         message = await User.populate(message, {
             path: "chat.participants",
-            select: "name avatar email deviceToken",
+            select: "name avatar email deviceToken blockedUsers mutedChats",
         });
+
+        // Check if blocked (for voice messages)
+        const senderId = req.user._id.toString();
+        const isBlocked = message.chat.participants.some(participant => {
+            const pId = participant._id.toString();
+            if (pId === senderId) return false;
+
+            if (participant.blockedUsers && participant.blockedUsers.includes(req.user._id)) return true;
+            if (req.user.blockedUsers && req.user.blockedUsers.includes(pId)) return true;
+
+            return false;
+        });
+
+        if (isBlocked) {
+            // Delete the message and the file if blocked
+            await Message.findByIdAndDelete(message._id);
+            // We could also delete the file, but let's keep it simple for now or use the fs module
+            return res.status(403).json({ error: "Cannot send message. One of the participants has blocked the other." });
+        }
 
         await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 

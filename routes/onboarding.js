@@ -16,4 +16,7 @@ router.post('/photos', auth, upload.array('photos', 10), onboardingController.up
 // GET /api/onboarding/status - Get current onboarding progress
 router.get('/status', auth, onboardingController.getOnboardingStatus);
 
+// POST /api/onboarding/jung-test - Submit Jung personality test answers
+router.post('/jung-test', auth, onboardingController.submitJungTest);
+
 module.exports = router;
