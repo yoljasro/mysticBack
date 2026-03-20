@@ -68,11 +68,11 @@ exports.updateProfile = async (req, res) => {
         }
 
 
-        // 6 photos/videos validation if onboarding is being completed
+        // At least 1 photo/video validation if onboarding is being completed
         if (req.body.onboardingCompleted === true || req.body.onboardingStep === 9) {
             const mediaCount = (req.user.photos?.length || 0) + (req.user.videos?.length || 0);
-            if (mediaCount < 6) {
-                return res.status(400).send({ error: 'Please upload at least 6 photos or videos to complete onboarding.' });
+            if (mediaCount < 1) {
+                return res.status(400).send({ error: 'Пожалуйста, загрузите хотя бы одно фото или видео для завершения онбординга.' });
             }
         }
 
