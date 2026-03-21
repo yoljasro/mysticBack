@@ -245,21 +245,30 @@ exports.sendMessage = async (req, res) => {
         const senderId = req.user._id.toString();
 
         // Check if sender is blocked by any participant or has blocked any participant
+        let blockerInfo = "";
         const isBlocked = chat.participants.some(participant => {
             const pId = participant._id.toString();
-            if (pId === senderId) return false; // Don't check against self
+            if (pId === senderId) return false;
 
-            // Participant blocked the sender
-            if (participant.blockedUsers && participant.blockedUsers.includes(req.user._id)) return true;
+            const hasBlockedMe = participant.blockedUsers && participant.blockedUsers.includes(req.user._id);
+            const iHaveBlockedThem = req.user.blockedUsers && req.user.blockedUsers.includes(pId);
 
-            // Sender blocked the participant
-            if (req.user.blockedUsers && req.user.blockedUsers.includes(pId)) return true;
+            if (hasBlockedMe && iHaveBlockedThem) {
+                blockerInfo = "Both users have blocked each other.";
+                return true;
+            } else if (hasBlockedMe) {
+                blockerInfo = `${participant.name} has blocked you.`;
+                return true;
+            } else if (iHaveBlockedThem) {
+                blockerInfo = "You have blocked this user.";
+                return true;
+            }
 
             return false;
         });
 
         if (isBlocked) {
-            return res.status(403).json({ error: "Cannot send message. One of the participants has blocked the other." });
+            return res.status(403).json({ error: blockerInfo || "Cannot send message. One of the participants has blocked the other." });
         }
 
         // Check if sender is blocked by any participant (mostly for 1-on-1)
@@ -377,12 +386,24 @@ exports.sendVoiceMessage = async (req, res) => {
 
         // Check if blocked (for voice messages)
         const senderId = req.user._id.toString();
+        let blockerInfo = "";
         const isBlocked = message.chat.participants.some(participant => {
             const pId = participant._id.toString();
             if (pId === senderId) return false;
 
-            if (participant.blockedUsers && participant.blockedUsers.includes(req.user._id)) return true;
-            if (req.user.blockedUsers && req.user.blockedUsers.includes(pId)) return true;
+            const hasBlockedMe = participant.blockedUsers && participant.blockedUsers.includes(req.user._id);
+            const iHaveBlockedThem = req.user.blockedUsers && req.user.blockedUsers.includes(pId);
+
+            if (hasBlockedMe && iHaveBlockedThem) {
+                blockerInfo = "Both users have blocked each other.";
+                return true;
+            } else if (hasBlockedMe) {
+                blockerInfo = `${participant.name} has blocked you.`;
+                return true;
+            } else if (iHaveBlockedThem) {
+                blockerInfo = "You have blocked this user.";
+                return true;
+            }
 
             return false;
         });
@@ -390,8 +411,7 @@ exports.sendVoiceMessage = async (req, res) => {
         if (isBlocked) {
             // Delete the message and the file if blocked
             await Message.findByIdAndDelete(message._id);
-            // We could also delete the file, but let's keep it simple for now or use the fs module
-            return res.status(403).json({ error: "Cannot send message. One of the participants has blocked the other." });
+            return res.status(403).json({ error: blockerInfo || "Cannot send message. One of the participants has blocked the other." });
         }
 
         await Chat.findByIdAndUpdate(chatId, { latestMessage: message });

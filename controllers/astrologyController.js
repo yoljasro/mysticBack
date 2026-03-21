@@ -15,13 +15,32 @@ const getAstrologicalJourney = asyncHandler(async (req, res) => {
         .limit(5);
 
     // Fetch recent predictions/history
-    const archivePredictions = await Prediction.find({ user: userId })
+    let archivePredictions = await Prediction.find({ user: userId })
         .sort({ date: -1 })
         .limit(10);
 
+    // If empty, create some initial ones (lazy initialization)
+    if (archivePredictions.length === 0) {
+        const today = new Date().toISOString().split('T')[0];
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        
+        archivePredictions = await Prediction.create([
+            { user: userId, title: 'Добро пожаловать!', content: 'Ваш путь в мире мистики начинается здесь.', date: today, type: 'daily' },
+            { user: userId, title: 'Первые шаги', content: 'Вы успешно настроили свой профиль и готовы к новым открытиям.', date: yesterday, type: 'daily' }
+        ]);
+    }
+
     // Fetch achievements
-    const achievements = await Achievement.find({ user: userId })
+    let achievements = await Achievement.find({ user: userId })
         .sort({ dateUnlocked: -1 });
+
+    // If empty, create initial ones
+    if (achievements.length === 0) {
+        achievements = await Achievement.create([
+            { user: userId, title: 'Новичок', icon: '🌟', isUnlocked: true },
+            { user: userId, title: 'Исследователь', icon: '🔭', isUnlocked: true }
+        ]);
+    }
 
     res.json({
         natalCharts,
