@@ -115,3 +115,68 @@
   "message": "Server Error"
 }
 ```
+
+---
+
+## 3. Список всех карт (Get All Cards)
+Возвращает список всех доступных карт в базе данных.
+
+**URL**: `/api/tarot/cards`  
+**Метод**: `GET`  
+**Заголовок**: `Authorization: Bearer <token>`
+
+### Ожидаемый ответ (200 OK):
+```json
+{
+  "success": true,
+  "count": 5,
+  "data": [
+    { "_id": "...", "name": "Карта Звезды", ... },
+    { "_id": "...", "name": "Влюбленные", ... }
+  ]
+}
+```
+
+---
+
+## 4. Детали конкретной карты (Get Card by ID)
+Возвращает информацию о конкретной карте по её ID.
+
+**URL**: `/api/tarot/cards/:id`  
+**Метод**: `GET`  
+**Заголовок**: `Authorization: Bearer <token>`
+
+### Ожидаемый ответ (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "64abcdef1234567890abcd12",
+    "name": "Карта Звезды",
+    ...
+  }
+}
+```
+
+---
+
+## 5. Расклад из трех карт (Three Card Spread)
+Выбирает 3 случайные уникальные карты для расклада "Прошлое, Настоящее, Будущее".
+
+**URL**: `/api/tarot/spread/three`  
+**Метод**: `GET`  
+**Заголовок**: `Authorization: Bearer <token>`
+
+### Ожидаемый ответ (200 OK):
+```json
+{
+  "success": true,
+  "data": {
+    "spread": [
+      { "position": "Past", "card": { ... } },
+      { "position": "Present", "card": { ... } },
+      { "position": "Future", "card": { ... } }
+    ]
+  }
+}
+```

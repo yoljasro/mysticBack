@@ -66,3 +66,79 @@ exports.drawAgain = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
+
+// @desc    Get all tarot cards
+// @route   GET /api/tarot/cards
+// @access  Private
+exports.getAllCards = async (req, res) => {
+    try {
+        const cards = await TarotCard.find();
+        res.status(200).json({
+            success: true,
+            count: cards.length,
+            data: cards
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Get single tarot card by ID
+// @route   GET /api/tarot/cards/:id
+// @access  Private
+exports.getCardById = async (req, res) => {
+    try {
+        const card = await TarotCard.findById(req.params.id);
+
+        if (!card) {
+            return res.status(404).json({ success: false, message: 'Tarot card not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: card
+        });
+    } catch (err) {
+        console.error(err);
+        if (err.kind === 'ObjectId') {
+            return res.status(404).json({ success: false, message: 'Tarot card not found' });
+        }
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Draw 3 random cards (Past, Present, Future)
+// @route   GET /api/tarot/spread/three
+// @access  Private
+exports.drawThreeCardSpread = async (req, res) => {
+    try {
+        const allCards = await TarotCard.find();
+        
+        if (allCards.length < 3) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Not enough tarot cards in the database to draw a 3-card spread.' 
+            });
+        }
+
+        // Shuffle and pick 3 unique cards
+        const shuffled = allCards.sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 3);
+
+        res.status(200).json({
+            success: true,
+            data: {
+                spread: [
+                    { position: 'Past', card: selected[0] },
+                    { position: 'Present', card: selected[1] },
+                    { position: 'Future', card: selected[2] }
+                ]
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
