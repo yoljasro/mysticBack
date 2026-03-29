@@ -61,10 +61,10 @@ const uploadPhotos = [
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: 'No photos uploaded' });
         }
-        const photoUrls = req.files.map((f) => `/uploads/${f.filename}`);
+        const photoObjects = req.files.map((f) => ({ url: `/uploads/${f.filename}` }));
         const user = await User.findByIdAndUpdate(
             req.user.id,
-            { $push: { photos: { $each: photoUrls } } },
+            { $push: { photos: { $each: photoObjects } } },
             { new: true }
         ).select('-password -__v');
         res.json(user);
@@ -80,15 +80,39 @@ const uploadVideos = [
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: 'No videos uploaded' });
         }
-        const videoUrls = req.files.map((f) => `/uploads/${f.filename}`);
+        const videoObjects = req.files.map((f) => ({ url: `/uploads/${f.filename}` }));
         const user = await User.findByIdAndUpdate(
             req.user.id,
-            { $push: { videos: { $each: videoUrls } } },
+            { $push: { videos: { $each: videoObjects } } },
             { new: true }
         ).select('-password -__v');
         res.json(user);
     })
 ];
+
+// @desc    Delete photo by ID
+// @route   DELETE /api/profile/photos/:id
+// @access  Private
+const deletePhoto = asyncHandler(async (req, res) => {
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        { $pull: { photos: { _id: req.params.id } } },
+        { new: true }
+    ).select('-password -__v');
+    res.json(user);
+});
+
+// @desc    Delete video by ID
+// @route   DELETE /api/profile/videos/:id
+// @access  Private
+const deleteVideo = asyncHandler(async (req, res) => {
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        { $pull: { videos: { _id: req.params.id } } },
+        { new: true }
+    ).select('-password -__v');
+    res.json(user);
+});
 
 module.exports = {
     getProfile,
@@ -96,4 +120,6 @@ module.exports = {
     uploadAvatar,
     uploadPhotos,
     uploadVideos,
+    deletePhoto,
+    deleteVideo,
 };

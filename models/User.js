@@ -104,7 +104,10 @@ const userSchema = new mongoose.Schema({
         minAge: { type: Number, default: 18 },
         maxAge: { type: Number, default: 100 }
     },
-    photos: [String],
+    photos: [{
+        url: String,
+        _id: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }
+    }],
     bio: {
         type: String,
         maxLength: 500
@@ -133,7 +136,8 @@ const userSchema = new mongoose.Schema({
         default: false
     },
     videos: [{
-        type: String
+        url: String,
+        _id: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() }
     }],
     jungType: {
         type: String,

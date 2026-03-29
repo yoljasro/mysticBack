@@ -8,6 +8,8 @@ const {
     uploadAvatar,
     uploadPhotos,
     uploadVideos,
+    deletePhoto,
+    deleteVideo,
 } = require('../controllers/profileController');
 
 const { getAstrologicalJourney } = require('../controllers/astrologyController');
@@ -23,5 +25,7 @@ router.post('/videos', protect, uploadVideos);
 router.get('/astrological-path', protect, getAstrologicalJourney);
 router.get('/archive', protect, getNotifications);
 router.put('/archive/read', protect, markRead);
+router.delete('/photos/:id', protect, deletePhoto);
+router.delete('/videos/:id', protect, deleteVideo);
 
 module.exports = router;
