@@ -62,11 +62,13 @@ const uploadPhotos = [
             return res.status(400).json({ message: 'No photos uploaded' });
         }
         const photoObjects = req.files.map((f) => ({ url: `/uploads/${f.filename}` }));
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $push: { photos: { $each: photoObjects } } },
-            { new: true }
-        ).select('-password -__v');
+
+        const user = await User.findById(req.user.id).select('-password -__v');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        user.photos.push(...photoObjects);
+        await user.save();
+
         res.json(user);
     })
 ];
@@ -81,11 +83,13 @@ const uploadVideos = [
             return res.status(400).json({ message: 'No videos uploaded' });
         }
         const videoObjects = req.files.map((f) => ({ url: `/uploads/${f.filename}` }));
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $push: { videos: { $each: videoObjects } } },
-            { new: true }
-        ).select('-password -__v');
+
+        const user = await User.findById(req.user.id).select('-password -__v');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        user.videos.push(...videoObjects);
+        await user.save();
+
         res.json(user);
     })
 ];
