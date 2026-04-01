@@ -57,6 +57,10 @@ exports.updateProfile = async (req, res) => {
                     type: 'Point',
                     coordinates: [req.body.location.longitude, req.body.location.latitude]
                 };
+            } else if ((update === 'photos' || update === 'videos') && Array.isArray(req.body[update])) {
+                req.user[update] = req.body[update].map(item => {
+                    return typeof item === 'string' ? { url: item } : item;
+                });
             } else {
                 req.user[update] = req.body[update];
             }
@@ -98,11 +102,11 @@ exports.uploadMedia = async (req, res) => {
         const newVideos = [];
 
         req.files.forEach(file => {
-            const url = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+            const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
             if (file.mimetype.startsWith('image/')) {
-                newPhotos.push(url);
+                newPhotos.push({ url: fileUrl });
             } else if (file.mimetype.startsWith('video/')) {
-                newVideos.push(url);
+                newVideos.push({ url: fileUrl });
             }
         });
 
