@@ -214,6 +214,7 @@ const swipeAction = asyncHandler(async (req, res) => {
     let isMatch = false;
     let chatRoom = null;
     let compatibilityScore = null;
+    let compatibilityData = null;
 
     if (action === 'like' && recipientInteraction) {
         // It's a match!
@@ -222,7 +223,8 @@ const swipeAction = asyncHandler(async (req, res) => {
         // Fetch users to calculate compatibility
         const requester = await User.findById(requesterId);
         const recipient = await User.findById(recipientId);
-        compatibilityScore = calculateCompatibility(requester, recipient);
+        compatibilityData = calculateCompatibility(requester, recipient);
+        compatibilityScore = compatibilityData.overall;
 
         // Update both interactions to reflect the match and score
         recipientInteraction.isMatch = true;
@@ -239,7 +241,8 @@ const swipeAction = asyncHandler(async (req, res) => {
                     avatar: requester.avatar,
                     nickname: requester.nickname
                 },
-                compatibilityScore: compatibilityScore
+                compatibilityScore: compatibilityScore,
+                compatibilityData: compatibilityData
             });
         }
 
