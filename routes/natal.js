@@ -17,4 +17,7 @@ router.get('/:id', auth, natalController.getChartById);
 // 4. Delete a saved Natal Chart
 router.delete('/:id', auth, natalController.deleteChart);
 
+// 5. Compare Compatibility with another person
+router.post('/compatibility', auth, natalController.compareCompatibility);
+
 module.exports = router;

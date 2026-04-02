@@ -79,4 +79,74 @@ const getNatalData = (date, lat = 0, lon = 0) => {
     return { planets };
 };
 
-module.exports = { getZodiacSign, getMoonPhaseName, getZodiacSignFromLongitude, getNatalData };
+const getElementForSign = (sign) => {
+    const elements = {
+        "Огонь": ["Овен", "Лев", "Стрелец"],
+        "Земля": ["Телец", "Дева", "Козерог"],
+        "Воздух": ["Близнецы", "Весы", "Водолей"],
+        "Вода": ["Рак", "Скорпион", "Рыбы"]
+    };
+    for (const [element, signs] of Object.entries(elements)) {
+        if (signs.includes(sign)) return element;
+    }
+    return null;
+};
+
+const getModalityForSign = (sign) => {
+    const modalities = {
+        "Кардинальный": ["Овен", "Рак", "Весы", "Козерог"],
+        "Фиксированный": ["Телец", "Лев", "Скорпион", "Водолей"],
+        "Мутабельный": ["Близнецы", "Дева", "Стрелец", "Рыбы"]
+    };
+    for (const [modality, signs] of Object.entries(modalities)) {
+        if (signs.includes(sign)) return modality;
+    }
+    return null;
+};
+
+const calculateZodiacCompatibility = (sign1, sign2) => {
+    if (!sign1 || !sign2) return 50;
+    if (sign1 === sign2) return 80;
+
+    const el1 = getElementForSign(sign1);
+    const el2 = getElementForSign(sign2);
+
+    let score = 50;
+
+    // Element compatibility
+    if (el1 === el2) {
+        score += 30; // Same element is very compatible
+    } else if (
+        (el1 === "Огонь" && el2 === "Воздух") || (el1 === "Воздух" && el2 === "Огонь") ||
+        (el1 === "Земля" && el2 === "Вода") || (el1 === "Вода" && el2 === "Земля")
+    ) {
+        score += 20; // Complementary elements
+    } else if (
+        (el1 === "Огонь" && el2 === "Вода") || (el1 === "Вода" && el2 === "Огонь") ||
+        (el1 === "Земля" && el2 === "Воздух") || (el1 === "Воздух" && el2 === "Земля")
+    ) {
+        score -= 20; // Challenging elements
+    }
+
+    const mod1 = getModalityForSign(sign1);
+    const mod2 = getModalityForSign(sign2);
+
+    // Modality compatibility (simplified)
+    if (mod1 === mod2 && mod1 === "Фиксированный") {
+        score -= 10; // Two fixed signs can clash
+    } else if (mod1 !== mod2) {
+        score += 5; // Different modalities often balance each other
+    }
+
+    return Math.max(10, Math.min(99, score)); // clamp between 10 and 99
+};
+
+module.exports = { 
+    getZodiacSign, 
+    getMoonPhaseName, 
+    getZodiacSignFromLongitude, 
+    getNatalData,
+    getElementForSign,
+    getModalityForSign,
+    calculateZodiacCompatibility
+};
