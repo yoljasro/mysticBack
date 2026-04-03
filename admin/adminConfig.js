@@ -13,6 +13,7 @@ const Otp = require('../models/Otp');
 const Prediction = require('../models/Prediction');
 const TarotCard = require('../models/TarotCard');
 const TarotHistory = require('../models/TarotHistory');
+const Horoscope = require('../models/Horoscope');
 
 const initAdmin = async () => {
     // Dynamic imports for ESM modules
@@ -30,6 +31,7 @@ const initAdmin = async () => {
             { resource: NatalChart, options: { navigation: { name: 'Astrology', icon: 'Star' } } },
             { resource: LunarDay, options: { navigation: { name: 'Astrology', icon: 'Moon' } } },
             { resource: Prediction, options: { navigation: { name: 'Astrology', icon: 'CrystalBall' } } },
+            { resource: Horoscope, options: { navigation: { name: 'Astrology', icon: 'Compass' } } },
             { resource: Chat, options: { navigation: { name: 'Messages', icon: 'Chat' } } },
             { resource: Message, options: { navigation: { name: 'Messages', icon: 'Send' } } },
             { resource: Interaction, options: { navigation: { name: 'Engagement', icon: 'Heart' } } },

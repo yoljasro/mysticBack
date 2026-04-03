@@ -41,6 +41,9 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/matches', matchRoutes);
 app.use('/api/tarot', tarotRoutes);
 
+const horoscopeRoutes = require('./routes/horoscope');
+app.use('/api/horoscope', horoscopeRoutes);
+
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
