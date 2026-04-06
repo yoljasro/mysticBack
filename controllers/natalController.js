@@ -7,7 +7,7 @@ exports.calculateAndSaveChart = async (req, res) => {
         const { profileName, name, dateOfBirth, timeOfBirth, isTimeUnknown, placeOfBirth, timezone } = req.body;
 
         if (!profileName || !name || !dateOfBirth || !placeOfBirth) {
-            return res.status(400).json({ error: "Please provide profileName, name, dateOfBirth and placeOfBirth at least." });
+            return res.status(400).json({ error: "Пожалуйста, укажите имя профиля, имя, дату рождения и место рождения." });
         }
 
         // --- DYNAMIC ASTROLOGY LOGIC ---
@@ -122,7 +122,7 @@ exports.getChartById = async (req, res) => {
         const chart = await NatalChart.findOne({ _id: chartId, user: req.user._id });
 
         if (!chart) {
-            return res.status(404).json({ error: "Natal chart not found or unauthorized." });
+            return res.status(404).json({ error: "Натальная карта не найдена или нет доступа." });
         }
 
         res.status(200).json(chart);
@@ -139,10 +139,10 @@ exports.deleteChart = async (req, res) => {
         const deletedChart = await NatalChart.findOneAndDelete({ _id: chartId, user: req.user._id });
 
         if (!deletedChart) {
-            return res.status(404).json({ error: "Natal chart not found or unauthorized." });
+            return res.status(404).json({ error: "Натальная карта не найдена или нет доступа." });
         }
 
-        res.status(200).json({ message: "Natal chart successfully deleted.", id: chartId });
+        res.status(200).json({ message: "Натальная карта успешно удалена.", id: chartId });
     } catch (error) {
         console.error("deleteChart error:", error);
         res.status(500).json({ error: error.message });
@@ -155,13 +155,13 @@ exports.compareCompatibility = async (req, res) => {
         const { partnerDateOfBirth, partnerTimeOfBirth, partnerName } = req.body;
 
         if (!partnerDateOfBirth) {
-            return res.status(400).json({ error: "Please provide at least partnerDateOfBirth (DD.MM.YYYY)." });
+            return res.status(400).json({ error: "Пожалуйста, укажите дату рождения партнёра (DD.MM.YYYY)." });
         }
 
         // Get Current User
         const currentUser = req.user;
         if (!currentUser.dateOfBirth) {
-            return res.status(400).json({ error: "Your date of birth is not set in profile." });
+            return res.status(400).json({ error: "Ваша дата рождения не указана в профиле." });
         }
 
         // Calculate User Zodiac & Natal

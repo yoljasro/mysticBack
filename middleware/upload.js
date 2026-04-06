@@ -18,7 +18,7 @@ function checkFileType(file, cb) {
     if (mimetype && extname) {
         return cb(null, true);
     } else {
-        cb('Error: Images, Videos, and Audio Only!');
+        cb('Ошибка: Только изображения, видео и аудио!');
     }
 }
 

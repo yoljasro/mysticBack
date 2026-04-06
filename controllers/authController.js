@@ -15,7 +15,7 @@ const generateToken = (userId) => {
 exports.sendOtp = async (req, res) => {
     try {
         const { phone } = req.body;
-        if (!phone) return res.status(400).json({ message: 'Phone number is required' });
+        if (!phone) return res.status(400).json({ message: 'Необходимо указать номер телефона' });
 
         // Generate fixed test OTP (7777)
         const code = "7777";
@@ -31,21 +31,21 @@ exports.sendOtp = async (req, res) => {
         // MOCK: Send OTP (In real world, use SMS provider)
         console.log(`[MOCK OTP] code for ${phone}: ${code}`);
 
-        res.status(200).json({ message: 'OTP sent successfully', dev_note: 'Check console for code' });
+        res.status(200).json({ message: 'OTP код успешно отправлен', dev_note: 'Проверьте консоль для получения кода' });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
 
 exports.verifyOtp = async (req, res) => {
     try {
         const { phone, code } = req.body;
-        if (!phone || !code) return res.status(400).json({ message: 'Phone and code are required' });
+        if (!phone || !code) return res.status(400).json({ message: 'Необходимо указать номер телефона и код' });
 
         const otpRecord = await Otp.findOne({ phone, code });
 
-        if (!otpRecord) return res.status(400).json({ message: 'Invalid OTP' });
-        if (otpRecord.expiresAt < Date.now()) return res.status(400).json({ message: 'OTP expired' });
+        if (!otpRecord) return res.status(400).json({ message: 'Неверный код OTP' });
+        if (otpRecord.expiresAt < Date.now()) return res.status(400).json({ message: 'Срок действия OTP кода истёк' });
 
         // Check if user exists
         let user = await User.findOne({ phone });
@@ -61,13 +61,13 @@ exports.verifyOtp = async (req, res) => {
             const token = generateToken(user._id);
             const userResponse = user.toObject();
             delete userResponse.password;
-            res.status(200).json({ message: 'Login successful', token, user: userResponse });
+            res.status(200).json({ message: 'Вход выполнен успешно', token, user: userResponse });
         } else {
-            res.status(200).json({ message: 'OTP verified. Proceed to registration.', isNewUser: true });
+            res.status(200).json({ message: 'OTP подтверждён. Перейдите к регистрации.', isNewUser: true });
         }
 
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
 
@@ -82,7 +82,7 @@ exports.register = async (req, res) => {
 
         // Basic validation
         if (!name || !email || !password || !phone) {
-            return res.status(400).json({ message: 'All required fields must be provided' });
+            return res.status(400).json({ message: 'Все обязательные поля должны быть заполнены' });
         }
 
         // Check if user exists
@@ -91,7 +91,7 @@ exports.register = async (req, res) => {
         });
 
         if (existingUser) {
-            return res.status(400).json({ message: 'User already exists with this email or phone' });
+            return res.status(400).json({ message: 'Пользователь с таким email или номером телефона уже существует' });
         }
 
         // Hash password
@@ -117,10 +117,10 @@ exports.register = async (req, res) => {
         const userResponse = newUser.toObject();
         delete userResponse.password;
 
-        res.status(201).json({ message: 'User registered successfully', token, user: userResponse });
+        res.status(201).json({ message: 'Пользователь успешно зарегистрирован', token, user: userResponse });
 
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
 
@@ -128,21 +128,21 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+        if (!email || !password) return res.status(400).json({ message: 'Email и пароль обязательны' });
 
         // Find user by email OR phone
         const user = await User.findOne({
             $or: [{ email: email }, { phone: email }]
         }).select('+password');
 
-        if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+        if (!user) return res.status(400).json({ message: 'Неверные учётные данные' });
 
         // Check if user has a password (might be social only)
-        if (!user.password) return res.status(400).json({ message: 'Please login with Google/Apple' });
+        if (!user.password) return res.status(400).json({ message: 'Пожалуйста, войдите через Google/Apple' });
 
         // Check password
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+        if (!isMatch) return res.status(400).json({ message: 'Неверные учётные данные' });
 
         const token = generateToken(user._id);
         const userResponse = user.toObject();
@@ -153,17 +153,17 @@ exports.login = async (req, res) => {
             await User.findByIdAndUpdate(user._id, { zodiacSign: userResponse.zodiacSign });
         }
 
-        res.status(200).json({ message: 'Login successful', token, user: userResponse });
+        res.status(200).json({ message: 'Вход выполнен успешно', token, user: userResponse });
 
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
 
 exports.googleLogin = async (req, res) => {
     try {
         const { idToken } = req.body;
-        if (!idToken) return res.status(400).json({ message: 'Google ID Token is required' });
+        if (!idToken) return res.status(400).json({ message: 'Требуется Google ID токен' });
 
         // Verify Token
         const ticket = await client.verifyIdToken({
@@ -201,20 +201,20 @@ exports.googleLogin = async (req, res) => {
         const userResponse = user.toObject();
         delete userResponse.password;
 
-        res.status(200).json({ message: 'Google login successful', token, user: userResponse });
+        res.status(200).json({ message: 'Вход через Google выполнен успешно', token, user: userResponse });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Google Auth Failed', error: error.message });
+        res.status(500).json({ message: 'Ошибка авторизации через Google', error: error.message });
     }
 };
 
 exports.appleLogin = async (req, res) => {
     try {
         // Placeholder Apple Login
-        res.status(501).json({ message: 'Apple Login not fully implemented (requires Apple Developer Keys)' });
+        res.status(501).json({ message: 'Вход через Apple ещё не реализован (требуются ключи Apple Developer)' });
     } catch (error) {
-        res.status(500).json({ message: 'Apple Auth Failed', error: error.message });
+        res.status(500).json({ message: 'Ошибка авторизации через Apple', error: error.message });
     }
 };
 
@@ -223,27 +223,27 @@ exports.changePassword = async (req, res) => {
         const { oldPassword, newPassword } = req.body;
 
         if (!oldPassword || !newPassword) {
-            return res.status(400).json({ message: 'Old and new passwords are required' });
+            return res.status(400).json({ message: 'Необходимо указать старый и новый пароли' });
         }
 
         const user = await User.findById(req.user._id).select('+password');
 
         if (!user.password) {
-            return res.status(400).json({ message: 'User does not have a local password (social auth)' });
+            return res.status(400).json({ message: 'У пользователя нет локального пароля (используется соцсеть)' });
         }
 
         const isMatch = await bcrypt.compare(oldPassword, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid old password' });
+            return res.status(400).json({ message: 'Неверный старый пароль' });
         }
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
         await user.save();
 
-        res.status(200).json({ message: 'Password updated successfully' });
+        res.status(200).json({ message: 'Пароль успешно обновлён' });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
 
@@ -262,7 +262,7 @@ exports.searchUsers = async (req, res) => {
         const users = await User.find(keyword).find({ _id: { $ne: req.user._id } }).select("-password");
         res.send(users);
     } catch (error) {
-        res.status(500).json({ message: 'Search failed', error: error.message });
+        res.status(500).json({ message: 'Ошибка поиска', error: error.message });
     }
 };
 
@@ -272,9 +272,9 @@ exports.deleteAccount = async (req, res) => {
 
         await User.findByIdAndDelete(userId);
 
-        res.status(200).json({ message: 'Account deleted successfully' });
+        res.status(200).json({ message: 'Аккаунт успешно удалён' });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        res.status(500).json({ message: 'Ошибка сервера', error: error.message });
     }
 };
 

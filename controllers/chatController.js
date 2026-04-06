@@ -7,7 +7,7 @@ exports.accessChat = async (req, res) => {
     const { userId } = req.body;
 
     if (!userId) {
-        return res.status(400).send({ error: "UserId param not sent with request" });
+        return res.status(400).send({ error: "Параметр UserId не передан в запросе" });
     }
 
     var isChat = await Chat.find({
@@ -106,13 +106,13 @@ exports.fetchChats = async (req, res) => {
 // Create Group Chat
 exports.createGroupChat = async (req, res) => {
     if (!req.body.participants || !req.body.name) {
-        return res.status(400).send({ message: "Please Fill all the fields" });
+        return res.status(400).send({ message: "Пожалуйста, заполните все поля" });
     }
 
     var participants = JSON.parse(req.body.participants);
 
     if (participants.length < 2) {
-        return res.status(400).send("More than 2 participants are required to form a group chat");
+        return res.status(400).send("Для создания группового чата требуется более 2 участников");
     }
 
     participants.push(req.user);
@@ -164,7 +164,7 @@ exports.renameGroup = async (req, res) => {
         .populate("groupAdmin", "-password");
 
     if (!updatedChat) {
-        res.status(404).send({ error: "Chat Not Found" });
+        res.status(404).send({ error: "Чат не найден" });
     } else {
         res.json(updatedChat);
     }
@@ -183,7 +183,7 @@ exports.addToGroup = async (req, res) => {
         .populate("groupAdmin", "-password");
 
     if (!added) {
-        res.status(404).send({ error: "Chat Not Found" });
+        res.status(404).send({ error: "Чат не найден" });
     } else {
         res.json(added);
     }
@@ -202,7 +202,7 @@ exports.removeFromGroup = async (req, res) => {
         .populate("groupAdmin", "-password");
 
     if (!removed) {
-        res.status(404).send({ error: "Chat Not Found" });
+        res.status(404).send({ error: "Чат не найден" });
     } else {
         res.json(removed);
     }
@@ -212,7 +212,7 @@ exports.removeFromGroup = async (req, res) => {
 exports.allMessages = async (req, res) => {
     try {
         const chat = await Chat.findById(req.params.chatId);
-        if (!chat) return res.status(404).send({ error: "Chat not found" });
+        if (!chat) return res.status(404).send({ error: "Чат не найден" });
 
         const clearedAt = chat.clearedAt ? chat.clearedAt.get(req.user._id.toString()) : null;
 
@@ -240,7 +240,7 @@ exports.sendMessage = async (req, res) => {
 
     try {
         const chat = await Chat.findById(chatId).populate("participants", "name avatar email deviceToken blockedUsers mutedChats");
-        if (!chat) return res.status(404).send({ error: "Chat Not Found" });
+        if (!chat) return res.status(404).send({ error: "Чат не найден" });
 
         const senderId = req.user._id.toString();
 
@@ -254,13 +254,13 @@ exports.sendMessage = async (req, res) => {
             const iHaveBlockedThem = req.user.blockedUsers && req.user.blockedUsers.includes(pId);
 
             if (hasBlockedMe && iHaveBlockedThem) {
-                blockerInfo = "Both users have blocked each other.";
+                blockerInfo = "Оба пользователя заблокировали друг друга.";
                 return true;
             } else if (hasBlockedMe) {
-                blockerInfo = `${participant.name} has blocked you.`;
+                blockerInfo = `${participant.name} заблокировал(а) вас.`;
                 return true;
             } else if (iHaveBlockedThem) {
-                blockerInfo = "You have blocked this user.";
+                blockerInfo = "Вы заблокировали этого пользователя.";
                 return true;
             }
 
@@ -268,7 +268,7 @@ exports.sendMessage = async (req, res) => {
         });
 
         if (isBlocked) {
-            return res.status(403).json({ error: blockerInfo || "Cannot send message. One of the participants has blocked the other." });
+            return res.status(403).json({ error: blockerInfo || "Невозможно отправить сообщение. Один из участников заблокировал другого." });
         }
 
         // Check if sender is blocked by any participant (mostly for 1-on-1)
@@ -341,7 +341,7 @@ exports.sendMessage = async (req, res) => {
                 const tokens = recipients.map((r) => r.deviceToken);
                 await notificationService.sendPushNotification(tokens, {
                     title: message.sender.name,
-                    body: message.content || "Sent an attachment",
+                    body: message.content || "Отправил(а) вложение",
                     data: { chatId: chatId }
                 });
             }
@@ -360,7 +360,7 @@ exports.sendVoiceMessage = async (req, res) => {
     const { chatId } = req.body;
 
     if (!req.file || !chatId) {
-        return res.status(400).send({ error: "Audio file and chatId are required" });
+        return res.status(400).send({ error: "Аудиофайл и chatId обязательны" });
     }
 
     const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
@@ -369,7 +369,7 @@ exports.sendVoiceMessage = async (req, res) => {
 
     var newMessage = {
         sender: req.user._id,
-        content: "Voice message",
+        content: "Голосовое сообщение",
         chat: chatId,
         attachments: [{ url, name, extension }],
     };
@@ -395,13 +395,13 @@ exports.sendVoiceMessage = async (req, res) => {
             const iHaveBlockedThem = req.user.blockedUsers && req.user.blockedUsers.includes(pId);
 
             if (hasBlockedMe && iHaveBlockedThem) {
-                blockerInfo = "Both users have blocked each other.";
+                blockerInfo = "Оба пользователя заблокировали друг друга.";
                 return true;
             } else if (hasBlockedMe) {
-                blockerInfo = `${participant.name} has blocked you.`;
+                blockerInfo = `${participant.name} заблокировал(а) вас.`;
                 return true;
             } else if (iHaveBlockedThem) {
-                blockerInfo = "You have blocked this user.";
+                blockerInfo = "Вы заблокировали этого пользователя.";
                 return true;
             }
 
@@ -411,7 +411,7 @@ exports.sendVoiceMessage = async (req, res) => {
         if (isBlocked) {
             // Delete the message and the file if blocked
             await Message.findByIdAndDelete(message._id);
-            return res.status(403).json({ error: blockerInfo || "Cannot send message. One of the participants has blocked the other." });
+            return res.status(403).json({ error: blockerInfo || "Невозможно отправить сообщение. Один из участников заблокировал другого." });
         }
 
         await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
@@ -436,7 +436,7 @@ exports.sendVoiceMessage = async (req, res) => {
                 const tokens = recipients.map((r) => r.deviceToken);
                 await notificationService.sendPushNotification(tokens, {
                     title: message.sender.name,
-                    body: "🎤 Voice message",
+                    body: "🎤 Голосовое сообщение",
                     data: { chatId: message.chat._id.toString() }
                 });
             }
@@ -454,7 +454,7 @@ exports.sendVoiceMessage = async (req, res) => {
 exports.addContact = async (req, res) => {
     try {
         const { contactId } = req.body;
-        if (!contactId) return res.status(400).send({ error: "ContactId is required" });
+        if (!contactId) return res.status(400).send({ error: "Требуется ContactId" });
 
         const user = await User.findByIdAndUpdate(
             req.user._id,
@@ -483,11 +483,11 @@ exports.deleteChat = async (req, res) => {
         const { chatId } = req.params;
         const chat = await Chat.findById(chatId);
 
-        if (!chat) return res.status(404).send({ error: "Chat not found" });
+        if (!chat) return res.status(404).send({ error: "Чат не найден" });
 
         // Check if user is participant
         if (!chat.participants.includes(req.user._id)) {
-            return res.status(401).send({ error: "Unauthorized" });
+            return res.status(401).send({ error: "Нет доступа" });
         }
 
         if (chat.isGroupChat) {
@@ -497,7 +497,7 @@ exports.deleteChat = async (req, res) => {
                 await Chat.findByIdAndUpdate(chatId, {
                     $pull: { participants: req.user._id }
                 });
-                return res.status(200).json({ message: "Left the group successfully" });
+                return res.status(200).json({ message: "Вы успешно покинули группу" });
             }
         }
 
@@ -505,7 +505,7 @@ exports.deleteChat = async (req, res) => {
         await Chat.findByIdAndDelete(chatId);
         await Message.deleteMany({ chat: chatId });
 
-        res.status(200).json({ message: "Chat deleted successfully" });
+        res.status(200).json({ message: "Чат успешно удален" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
@@ -521,7 +521,7 @@ exports.clearMessages = async (req, res) => {
             $set: { [`clearedAt.${userId}`]: new Date() }
         });
 
-        res.status(200).json({ message: "Messages cleared for you" });
+        res.status(200).json({ message: "Сообщения очищены для вас" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
@@ -542,7 +542,7 @@ exports.markAsRead = async (req, res) => {
             io.in(chatId).emit("messages read", { chatId: chatId, userId: req.user._id });
         }
 
-        res.status(200).json({ message: "Messages marked as read" });
+        res.status(200).json({ message: "Сообщения помечены как прочитанные" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
@@ -553,7 +553,7 @@ exports.updateGroupImage = async (req, res) => {
     const { chatId } = req.body;
 
     if (!req.file || !chatId) {
-        return res.status(400).send({ error: "Image file and chatId are required" });
+        return res.status(400).send({ error: "Файл изображения и chatId обязательны" });
     }
 
     const groupImage = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
@@ -568,7 +568,7 @@ exports.updateGroupImage = async (req, res) => {
             .populate("groupAdmin", "-password");
 
         if (!updatedChat) {
-            return res.status(404).send({ error: "Chat Not Found" });
+            return res.status(404).send({ error: "Чат не найден" });
         }
 
         res.status(200).json(updatedChat);
@@ -584,7 +584,7 @@ exports.blockUser = async (req, res) => {
         await User.findByIdAndUpdate(req.user._id, {
             $addToSet: { blockedUsers: userId }
         });
-        res.status(200).json({ message: "User blocked successfully" });
+        res.status(200).json({ message: "Пользователь успешно заблокирован" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
@@ -597,7 +597,7 @@ exports.unblockUser = async (req, res) => {
         await User.findByIdAndUpdate(req.user._id, {
             $pull: { blockedUsers: userId }
         });
-        res.status(200).json({ message: "User unblocked successfully" });
+        res.status(200).json({ message: "Пользователь успешно разблокирован" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
@@ -610,7 +610,7 @@ exports.muteChat = async (req, res) => {
         await User.findByIdAndUpdate(req.user._id, {
             $addToSet: { mutedChats: chatId }
         });
-        res.status(200).json({ message: "Chat muted successfully" });
+        res.status(200).json({ message: "Чат успешно приглушен" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }
@@ -623,7 +623,7 @@ exports.unmuteChat = async (req, res) => {
         await User.findByIdAndUpdate(req.user._id, {
             $pull: { mutedChats: chatId }
         });
-        res.status(200).json({ message: "Chat unmuted successfully" });
+        res.status(200).json({ message: "Приглушение чата снято" });
     } catch (error) {
         res.status(400).send({ error: error.message });
     }

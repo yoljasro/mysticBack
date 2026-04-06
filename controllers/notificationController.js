@@ -28,7 +28,7 @@ const markRead = asyncHandler(async (req, res) => {
         );
     }
 
-    res.json({ message: 'Success' });
+    res.json({ message: 'Успешно' });
 });
 
 module.exports = {

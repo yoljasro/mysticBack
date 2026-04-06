@@ -60,7 +60,7 @@ exports.getDayDetails = async (req, res) => {
         res.status(200).json(lunarInfo);
     } catch (error) {
         console.error("getDayDetails error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Внутренняя ошибка сервера" });
     }
 };
 
@@ -78,7 +78,7 @@ exports.getMonthOverview = async (req, res) => {
         res.status(200).json(days);
     } catch (error) {
         console.error("getMonthOverview error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Внутренняя ошибка сервера" });
     }
 };
 
@@ -103,6 +103,6 @@ exports.updateSettings = async (req, res) => {
         res.status(200).json(updatedUser.lunarSettings);
     } catch (error) {
         console.error("updateLunarSettings error:", error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: "Внутренняя ошибка сервера" });
     }
 };

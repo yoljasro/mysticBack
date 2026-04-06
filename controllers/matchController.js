@@ -191,17 +191,17 @@ const swipeAction = asyncHandler(async (req, res) => {
     const { recipientId, action } = req.body;
 
     if (!recipientId || !['like', 'pass'].includes(action)) {
-        return res.status(400).json({ message: 'Valid recipientId and action (like/pass) are required' });
+        return res.status(400).json({ message: 'Укажите recipientId и действие (like/pass)' });
     }
 
     if (requesterId.toString() === recipientId.toString()) {
-        return res.status(400).json({ message: 'You cannot swipe on yourself' });
+        return res.status(400).json({ message: 'Вы не можете оценивать себя' });
     }
 
     // Check if interaction already exists to prevent duplicates
     const existingInteraction = await Interaction.findOne({ requester: requesterId, recipient: recipientId });
     if (existingInteraction) {
-        return res.status(400).json({ message: 'You have already interacted with this user' });
+        return res.status(400).json({ message: 'Вы уже взаимодействовали с этим пользователем' });
     }
 
     // Check if the recipient already liked the requester
@@ -274,7 +274,7 @@ const swipeAction = asyncHandler(async (req, res) => {
     });
 
     res.status(201).json({
-        message: isMatch ? 'It is a match!' : 'Swiped successfully',
+        message: isMatch ? 'Это совпадение!' : 'Действие выполнено успешно',
         isMatch: isMatch,
         compatibilityScore: compatibilityScore,
         chat: chatRoom ? chatRoom : null

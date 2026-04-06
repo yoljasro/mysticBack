@@ -45,7 +45,7 @@ const getHoroscope = asyncHandler(async (req, res) => {
         } else if (user && user.dateOfBirth) {
             sign = getZodiacSign(user.dateOfBirth);
         } else {
-            return res.status(400).json({ message: 'Zodiac sign not provided and could not be determined.' });
+            return res.status(400).json({ message: 'Знак зодиака не указан и не может быть определен.' });
         }
     }
 
@@ -73,10 +73,10 @@ const getHoroscope = asyncHandler(async (req, res) => {
             type,
             date,
             predictions: {
-                general: "Zvezdi segodnya molchat. Proverte pozje ili viberite druguyu datu.",
-                love: "Lyubovi nikogda ne bivayet slishkom mnogo.",
-                career: "Vash put k uspehu chist.",
-                health: "Beregyite sebya i svoi sili."
+                general: "Звезды сегодня молчат. Проверьте позже или выберите другую дату.",
+                love: "Любви никогда не бывает слишком много.",
+                career: "Ваш путь к успеху чист.",
+                health: "Берегите себя и свои силы."
             },
             luckyNumber: Math.floor(Math.random() * 100),
             luckyColor: "Azure",
@@ -94,18 +94,18 @@ const getHoroscope = asyncHandler(async (req, res) => {
  */
 const getSignsList = asyncHandler(async (req, res) => {
     const signs = [
-        { id: 'aries', name: 'Aries', dates: 'Mar 21 - Apr 19', icon: '♈' },
-        { id: 'taurus', name: 'Taurus', dates: 'Apr 20 - May 20', icon: '♉' },
-        { id: 'gemini', name: 'Gemini', dates: 'May 21 - Jun 20', icon: '♊' },
-        { id: 'cancer', name: 'Cancer', dates: 'Jun 21 - Jul 22', icon: '♋' },
-        { id: 'leo', name: 'Leo', dates: 'Jul 23 - Aug 22', icon: '♌' },
-        { id: 'virgo', name: 'Virgo', dates: 'Aug 23 - Sep 22', icon: '♍' },
-        { id: 'libra', name: 'Libra', dates: 'Sep 23 - Oct 22', icon: '♎' },
-        { id: 'scorpio', name: 'Scorpio', dates: 'Oct 23 - Nov 21', icon: '♏' },
-        { id: 'sagittarius', name: 'Sagittarius', dates: 'Nov 22 - Dec 21', icon: '♐' },
-        { id: 'capricorn', name: 'Capricorn', dates: 'Dec 22 - Jan 19', icon: '♑' },
-        { id: 'aquarius', name: 'Aquarius', dates: 'Jan 20 - Feb 18', icon: '♒' },
-        { id: 'pisces', name: 'Pisces', dates: 'Feb 19 - Mar 20', icon: '♓' }
+        { id: 'aries', name: 'Овен', dates: '21 мар - 19 апр', icon: '♈' },
+        { id: 'taurus', name: 'Телец', dates: '20 апр - 20 мая', icon: '♉' },
+        { id: 'gemini', name: 'Близнецы', dates: '21 мая - 20 июн', icon: '♊' },
+        { id: 'cancer', name: 'Рак', dates: '21 июн - 22 июл', icon: '♋' },
+        { id: 'leo', name: 'Лев', dates: '23 июл - 22 авг', icon: '♌' },
+        { id: 'virgo', name: 'Дева', dates: '23 авг - 22 сен', icon: '♍' },
+        { id: 'libra', name: 'Весы', dates: '23 сен - 22 окт', icon: '♎' },
+        { id: 'scorpio', name: 'Скорпион', dates: '23 окт - 21 ноя', icon: '♏' },
+        { id: 'sagittarius', name: 'Стрелец', dates: '22 ноя - 21 дек', icon: '♐' },
+        { id: 'capricorn', name: 'Козерог', dates: '22 дек - 19 янв', icon: '♑' },
+        { id: 'aquarius', name: 'Водолей', dates: '20 янв - 18 фев', icon: '♒' },
+        { id: 'pisces', name: 'Рыбы', dates: '19 фев - 20 мар', icon: '♓' }
     ];
     res.json(signs);
 });

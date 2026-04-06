@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
     ];
     const invalid = Object.keys(req.body).filter((key) => !allowedFields.includes(key));
     if (invalid.length > 0) {
-        return res.status(400).json({ message: `Invalid fields: ${invalid.join(', ')}` });
+        return res.status(400).json({ message: `Недопустимые поля: ${invalid.join(', ')}` });
     }
     next();
 };

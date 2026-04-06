@@ -30,3 +30,4 @@ const interactionSchema = new mongoose.Schema({
 interactionSchema.index({ requester: 1, recipient: 1 }, { unique: true });
 
 module.exports = mongoose.model('Interaction', interactionSchema);
+

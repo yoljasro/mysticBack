@@ -9,7 +9,7 @@ const { getZodiacSign } = require('../utils/astrology');
 const getProfile = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user.id).select('-password -__v');
     if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+        return res.status(404).json({ message: 'Пользователь не найден' });
     }
     res.json(user);
 });
@@ -41,7 +41,7 @@ const uploadAvatar = [
     upload.single('avatar'),
     asyncHandler(async (req, res) => {
         if (!req.file) {
-            return res.status(400).json({ message: 'No file uploaded' });
+            return res.status(400).json({ message: 'Файл не загружен' });
         }
         const user = await User.findByIdAndUpdate(
             req.user.id,
@@ -59,12 +59,12 @@ const uploadPhotos = [
     upload.array('photos', 10),
     asyncHandler(async (req, res) => {
         if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: 'No photos uploaded' });
+            return res.status(400).json({ message: 'Фотографии не загружены' });
         }
         const photoObjects = req.files.map((f) => ({ url: `/uploads/${f.filename}` }));
 
         const user = await User.findById(req.user.id).select('-password -__v');
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
 
         user.photos.push(...photoObjects);
         await user.save();
@@ -80,12 +80,12 @@ const uploadVideos = [
     upload.array('videos', 5),
     asyncHandler(async (req, res) => {
         if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: 'No videos uploaded' });
+            return res.status(400).json({ message: 'Видео не загружены' });
         }
         const videoObjects = req.files.map((f) => ({ url: `/uploads/${f.filename}` }));
 
         const user = await User.findById(req.user.id).select('-password -__v');
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
 
         user.videos.push(...videoObjects);
         await user.save();

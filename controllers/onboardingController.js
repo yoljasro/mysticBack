@@ -47,7 +47,7 @@ exports.updateProfile = async (req, res) => {
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update));
 
         if (!isValidOperation) {
-            return res.status(400).send({ error: 'Invalid updates!' });
+            return res.status(400).send({ error: 'Недопустимые поля для обновления!' });
         }
 
         updates.forEach((update) => {
@@ -83,7 +83,7 @@ exports.updateProfile = async (req, res) => {
         await req.user.save();
 
         res.status(200).send({
-            message: 'Profile updated successfully',
+            message: 'Профиль успешно обновлён',
             user: req.user
         });
     } catch (error) {
@@ -95,7 +95,7 @@ exports.updateProfile = async (req, res) => {
 exports.uploadMedia = async (req, res) => {
     try {
         if (!req.files || req.files.length === 0) {
-            return res.status(400).send({ error: 'Please upload at least one file.' });
+            return res.status(400).send({ error: 'Пожалуйста, загрузите хотя бы один файл.' });
         }
 
         const newPhotos = [];
@@ -122,7 +122,7 @@ exports.uploadMedia = async (req, res) => {
         await req.user.save();
 
         res.status(200).send({
-            message: 'Media uploaded successfully',
+            message: 'Медиафайлы успешно загружены',
             photos: req.user.photos,
             videos: req.user.videos
         });
@@ -147,7 +147,7 @@ exports.submitJungTest = async (req, res) => {
 
         if (!Array.isArray(answers) || answers.length !== 20) {
             return res.status(400).json({
-                error: 'answers massivi kerak va u 20 ta javobdan iborat bo\'lishi kerak.'
+                error: 'Необходим массив answers, содержащий ровно 20 ответов.'
             });
         }
 
@@ -155,7 +155,7 @@ exports.submitJungTest = async (req, res) => {
         const allValid = answers.every(a => validOptions.includes(String(a).toUpperCase()));
         if (!allValid) {
             return res.status(400).json({
-                error: 'Har bir javob faqat A, B, C yoki D bo\'lishi kerak.'
+                error: 'Каждый ответ должен быть только A, B, C или D.'
             });
         }
 
@@ -167,7 +167,7 @@ exports.submitJungTest = async (req, res) => {
         await req.user.save();
 
         return res.status(200).json({
-            message: 'Jung testi muvaffaqiyatli saqlandi.',
+            message: 'Тест Юнга успешно сохранён.',
             jungType: result.type,
             label: result.label,
             scores: result.scores,

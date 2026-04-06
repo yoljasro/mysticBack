@@ -10,7 +10,7 @@ exports.drawDailyCard = async (req, res) => {
         // Find all cards
         const count = await TarotCard.countDocuments();
         if (count === 0) {
-            return res.status(404).json({ success: false, message: 'No tarot cards found in the database.' });
+            return res.status(404).json({ success: false, message: 'Карты Таро не найдены в базе данных.' });
         }
 
         // Generate a random number between 0 and count-1
@@ -20,7 +20,7 @@ exports.drawDailyCard = async (req, res) => {
         const randomCard = await TarotCard.findOne().skip(randomIndex);
 
         if (!randomCard) {
-            return res.status(500).json({ success: false, message: 'Server error while drawing a card.' });
+            return res.status(500).json({ success: false, message: 'Ошибка сервера при вытягивании карты.' });
         }
 
         res.status(200).json({
@@ -31,7 +31,7 @@ exports.drawDailyCard = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
@@ -43,7 +43,7 @@ exports.drawAgain = async (req, res) => {
         // Find all cards
         const count = await TarotCard.countDocuments();
         if (count === 0) {
-            return res.status(404).json({ success: false, message: 'No tarot cards found in the database.' });
+            return res.status(404).json({ success: false, message: 'Карты Таро не найдены в базе данных.' });
         }
 
         const randomIndex = Math.floor(Math.random() * count);
@@ -51,7 +51,7 @@ exports.drawAgain = async (req, res) => {
         const randomCard = await TarotCard.findOne().skip(randomIndex);
 
         if (!randomCard) {
-            return res.status(500).json({ success: false, message: 'Server error while drawing a card.' });
+            return res.status(500).json({ success: false, message: 'Ошибка сервера при вытягивании карты.' });
         }
 
         // Technically, "drawing again" might just returning a random card. 
@@ -64,7 +64,7 @@ exports.drawAgain = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
@@ -81,7 +81,7 @@ exports.getAllCards = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
@@ -93,7 +93,7 @@ exports.getCardById = async (req, res) => {
         const card = await TarotCard.findById(req.params.id);
 
         if (!card) {
-            return res.status(404).json({ success: false, message: 'Tarot card not found' });
+            return res.status(404).json({ success: false, message: 'Карта Таро не найдена' });
         }
 
         res.status(200).json({
@@ -103,9 +103,9 @@ exports.getCardById = async (req, res) => {
     } catch (err) {
         console.error(err);
         if (err.kind === 'ObjectId') {
-            return res.status(404).json({ success: false, message: 'Tarot card not found' });
+            return res.status(404).json({ success: false, message: 'Карта Таро не найдена' });
         }
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
@@ -119,7 +119,7 @@ exports.drawThreeCardSpread = async (req, res) => {
         if (allCards.length < 3) {
             return res.status(400).json({ 
                 success: false, 
-                message: 'Not enough tarot cards in the database to draw a 3-card spread.' 
+                message: 'Недостаточно карт Таро в базе данных для расклада на 3 карты.' 
             });
         }
 
@@ -150,7 +150,7 @@ exports.drawThreeCardSpread = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
@@ -170,7 +170,7 @@ exports.getTarotHistory = async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
@@ -182,12 +182,12 @@ exports.deleteTarotHistory = async (req, res) => {
         const historyItem = await TarotHistory.findById(req.params.id);
 
         if (!historyItem) {
-            return res.status(404).json({ success: false, message: 'History item not found' });
+            return res.status(404).json({ success: false, message: 'Запись истории не найдена' });
         }
 
         // Make sure user owns history item
         if (historyItem.user.toString() !== req.user.id) {
-            return res.status(401).json({ success: false, message: 'Not authorized' });
+            return res.status(401).json({ success: false, message: 'Нет доступа' });
         }
 
         await historyItem.deleteOne();
@@ -199,9 +199,9 @@ exports.deleteTarotHistory = async (req, res) => {
     } catch (err) {
         console.error(err);
         if (err.kind === 'ObjectId') {
-            return res.status(404).json({ success: false, message: 'History item not found' });
+            return res.status(404).json({ success: false, message: 'Запись истории не найдена' });
         }
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 };
 
