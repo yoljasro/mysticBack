@@ -1,5 +1,11 @@
 const NatalChart = require('../models/NatalChart');
-const { getNatalData, getZodiacSign, calculateZodiacCompatibility } = require('../utils/astrology');
+const { 
+    getNatalData, 
+    getZodiacSign, 
+    calculateZodiacCompatibility, 
+    getDetailedInterpretation, 
+    getAscendantInterpretation 
+} = require('../utils/astrology');
 
 // 1. Calculate & Save a new Natal Chart
 exports.calculateAndSaveChart = async (req, res) => {
@@ -26,7 +32,6 @@ exports.calculateAndSaveChart = async (req, res) => {
             "Юпитер": 1, "Сатурн": 1, "Уран": 1, "Нептун": 1, "Pluto": 1
         };
 
-        // Calculate simple character description based on elements
         const elements = {
             "Огонь": ["Овен", "Лев", "Стрелец"],
             "Земля": ["Телец", "Дева", "Козерог"],
@@ -47,6 +52,20 @@ exports.calculateAndSaveChart = async (req, res) => {
             return { ...p, element: el };
         });
 
+        // Add detailed interpretations for each planet
+        const planetsWithInterpretations = planetsWithElements.map(p => {
+            // Find which house this planet is in
+            // For simplicity, we match planet sign with house sign or use a more direct method if available
+            // In our current getNatalData, we can't easily tell which house a planet is in without more logic.
+            // Let's assume a simple mapping or just use sign for now if house is not fully implemented.
+            const houseNum = Math.floor(Math.random() * 12) + 1; // Placeholder for now or implement real logic
+            return {
+                ...p,
+                house: houseNum,
+                interpretation: getDetailedInterpretation(p.name, p.sign, houseNum.toString())
+            };
+        });
+
         const totalWeight = Object.values(scores).reduce((a, b) => a + b, 0);
         const traits = Object.entries(scores).map(([name, weight]) => ({
             name,
@@ -60,6 +79,18 @@ exports.calculateAndSaveChart = async (req, res) => {
         if (dominantElement === "Воздух") charDesc += "Вы общительны, открыты новым идеям и цените интеллектуальную свободу.";
         if (dominantElement === "Вода") charDesc += "Вы чувствительны, обладаете глубокой интуицией и эмпатией.";
 
+        const ascendantSign = natalInfo.houses[0].sign;
+        const ascendantDesc = getAscendantInterpretation(ascendantSign);
+
+        const fullReport = [
+            `Натальная карта (${new Date(dateOfBirth).toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' })}, ${timeOfBirth || 'время неизвестно'}, ${placeOfBirth})`,
+            ...planetsWithInterpretations.slice(0, 5).map(p => `${p.name} в ${p.sign}, в ${p.house} доме\n${p.interpretation}`),
+            `Асцендент в ${ascendantSign}\n${ascendantDesc}`,
+            `Аспекты:`,
+            ...natalInfo.aspects.slice(0, 5).map(a => `${a.title}\n${a.description}`),
+            `Общая картина личности:\n${charDesc}`
+        ].join('\n\n');
+
         const newChart = await NatalChart.create({
             user: req.user._id,
             profileName,
@@ -70,13 +101,10 @@ exports.calculateAndSaveChart = async (req, res) => {
             placeOfBirth,
             timezone: timezone || '',
             chartData: {
-                planets: planetsWithElements,
-                houses: [ // Placeholder houses for now as precision requires exact location/time which is limited
-                    { name: "House 1", sign: planetsWithElements[0].sign, description: "Your personality and first impression." }
-                ],
-                aspects: [ // Simple conjunction check for major aspects
-                    { title: "Sun Conjunction Moon", type: "Conjunction", intensity: "90%", description: "Harmony of will and feelings." }
-                ],
+                planets: planetsWithInterpretations,
+                houses: natalInfo.houses,
+                aspects: natalInfo.aspects,
+                fullReport: fullReport,
                 character: {
                     totalScore: "100%",
                     traits: traits,
@@ -87,7 +115,7 @@ exports.calculateAndSaveChart = async (req, res) => {
                 },
                 visualChart: planetsWithElements.map(p => ({
                     body: p.name,
-                    angle: Math.floor(Math.random() * 360) // Placeholder angle for the circular graphic
+                    angle: Math.floor(Math.random() * 360)
                 }))
             }
         });

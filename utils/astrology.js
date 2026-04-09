@@ -1,4 +1,5 @@
 const Astronomy = require('astronomy-engine');
+const { signInterpretations, houseInterpretations, ascendantInterpretations, aspectInterpretations, summaryInterpretations } = require('./astrologyData');
 
 const getZodiacSign = (date) => {
     const d = new Date(date);
@@ -44,8 +45,6 @@ const getMoonPhaseName = (date) => {
 
 const getNatalData = (date, lat = 0, lon = 0) => {
     const observer = new Astronomy.Observer(lat, lon, 0);
-    const time = Astronomy.Seasons(date.getFullYear()).mar_equinox; // Just a placeholder time object base
-    // Actually we need a proper Astronomy.Time object
     const astroTime = Astronomy.MakeTime(date);
 
     const bodies = [
@@ -72,11 +71,50 @@ const getNatalData = (date, lat = 0, lon = 0) => {
         };
     });
 
-    // Simple House calculation (Equal House System for simplicity as astronomy-engine doesn't have built-in Placidus)
-    // We need Sidereal Time for precise houses, but let's approximate or just use signs for now if we don't want too much complexity.
-    // For a real "Natal Chart", houses are critical.
+    // Simple House calculation (Equal House System)
+    // For a real calculation, we need to find the Ascendant (AC).
+    // The AC is the point of the ecliptic rising on the eastern horizon.
+    // Simplifying for now: Use hour of day to estimate House 1
+    const hours = date.getHours();
+    const houseOffset = Math.floor((hours / 24) * 12);
+    const houses = [];
+    for (let i = 1; i <= 12; i++) {
+        const houseNum = i;
+        const signIndex = (Math.floor(planets[0].longitude / 30) + (i - 1) - houseOffset + 12) % 12;
+        const signs = ["Овен", "Телец", "Близнецы", "Рак", "Лев", "Дева", "Весы", "Скорпион", "Стрелец", "Козерог", "Водолей", "Рыбы"];
+        houses.push({
+            name: `House ${houseNum}`,
+            sign: signs[signIndex],
+            description: houseInterpretations["General"]?.[houseNum] || `Ваш ${houseNum}-й дом в знаке ${signs[signIndex]}.`
+        });
+    }
 
-    return { planets };
+    // Aspect calculation
+    const aspects = [];
+    for (let i = 0; i < planets.length; i++) {
+        for (let j = i + 1; j < planets.length; j++) {
+            const p1 = planets[i];
+            const p2 = planets[j];
+            const diff = Math.abs(p1.longitude - p2.longitude);
+            const angle = diff > 180 ? 360 - diff : diff;
+
+            let type = "";
+            let intensity = "0%";
+            if (angle < 8) { type = "Conjunction"; intensity = "95%"; }
+            else if (Math.abs(angle - 60) < 6) { type = "Sextile"; intensity = "70%"; }
+            else if (Math.abs(angle - 90) < 6) { type = "Square"; intensity = "80%"; }
+            else if (Math.abs(angle - 120) < 6) { type = "Trine"; intensity = "90%"; }
+            else if (Math.abs(angle - 180) < 6) { type = "Opposition"; intensity = "85%"; }
+
+            if (type) {
+                const title = `${p1.name} ${type} ${p2.name}`;
+                const description = aspectInterpretations[title] || aspectInterpretations[`${p1.name} ${type} ${p2.name}`] || "Астрологический аспект, влияющий на вашу судьбу.";
+                aspects.push({ title, type, intensity, description });
+            }
+        }
+    }
+
+    return { planets, houses, aspects };
 };
 
 const getElementForSign = (sign) => {
@@ -113,32 +151,40 @@ const calculateZodiacCompatibility = (sign1, sign2) => {
 
     let score = 50;
 
-    // Element compatibility
     if (el1 === el2) {
-        score += 30; // Same element is very compatible
+        score += 30;
     } else if (
         (el1 === "Огонь" && el2 === "Воздух") || (el1 === "Воздух" && el2 === "Огонь") ||
         (el1 === "Земля" && el2 === "Вода") || (el1 === "Вода" && el2 === "Земля")
     ) {
-        score += 20; // Complementary elements
+        score += 20;
     } else if (
         (el1 === "Огонь" && el2 === "Вода") || (el1 === "Вода" && el2 === "Огонь") ||
         (el1 === "Земля" && el2 === "Воздух") || (el1 === "Воздух" && el2 === "Земля")
     ) {
-        score -= 20; // Challenging elements
+        score -= 20;
     }
 
     const mod1 = getModalityForSign(sign1);
     const mod2 = getModalityForSign(sign2);
 
-    // Modality compatibility (simplified)
     if (mod1 === mod2 && mod1 === "Фиксированный") {
-        score -= 10; // Two fixed signs can clash
+        score -= 10;
     } else if (mod1 !== mod2) {
-        score += 5; // Different modalities often balance each other
+        score += 5;
     }
 
-    return Math.max(10, Math.min(99, score)); // clamp between 10 and 99
+    return Math.max(10, Math.min(99, score));
+};
+
+const getDetailedInterpretation = (planet, sign, house) => {
+    const signText = signInterpretations[planet]?.[sign] || `Ваш ${planet} в знаке ${sign}.`;
+    const houseText = houseInterpretations[planet]?.[house] || "";
+    return `${signText} ${houseText}`.trim();
+};
+
+const getAscendantInterpretation = (sign) => {
+    return ascendantInterpretations[sign] || `Ваш Асцендент в знаке ${sign}. Это определяет ваше внешнее поведение и то, как вас видят окружающие.`;
 };
 
 module.exports = { 
@@ -148,5 +194,7 @@ module.exports = {
     getNatalData,
     getElementForSign,
     getModalityForSign,
-    calculateZodiacCompatibility
+    calculateZodiacCompatibility,
+    getDetailedInterpretation,
+    getAscendantInterpretation
 };

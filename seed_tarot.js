@@ -15,7 +15,7 @@ mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/mystic')
 const tarotData = [
     {
         name: "Карта Звезды",
-        description: "Надежда и вдохновение освещают ваш путь. Следуйте за своей мечтой.",
+        description: "Надежда и вдохновение освещаю т ваш путь. Следуйте за своей мечтой.",
         loveForecast: {
             description: "Ваши чувства обретают новую глубину и ясность.",
             strongPoint: "Глубина",
