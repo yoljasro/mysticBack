@@ -7,26 +7,33 @@ const tarotCardSchema = new mongoose.Schema({
         unique: true
     },
     description: {
-        type: String,
-        required: true
+        upright: { type: String, default: '' },
+        reversed: { type: String, default: '' }
     },
     loveForecast: {
-        description: String,
+        upright: { type: String, default: '' },
+        reversed: { type: String, default: '' },
         strongPoint: String,
         watchOut: String,
         tipOfTheDay: String
     },
     careerForecast: {
-        description: String,
+        upright: { type: String, default: '' },
+        reversed: { type: String, default: '' },
         strongPoint: String,
         watchOut: String,
         tipOfTheDay: String
     },
     healthForecast: {
-        description: String,
+        upright: { type: String, default: '' },
+        reversed: { type: String, default: '' },
         strongPoint: String,
         watchOut: String,
         tipOfTheDay: String
+    },
+    advice: {
+        type: String,
+        default: ''
     },
     image: {
         type: String, // URL to the image of the card
