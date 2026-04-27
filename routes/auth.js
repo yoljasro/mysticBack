@@ -26,6 +26,9 @@ router.post('/google', authController.googleLogin);
 // POST /api/auth/apple
 router.post('/apple', authController.appleLogin);
 
+// POST /api/auth/vk
+router.post('/vk', authController.vkLogin);
+
 // PUT /api/auth/change-password
 router.put('/change-password', auth, authController.changePassword);
 

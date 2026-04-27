@@ -3,6 +3,7 @@ const Otp = require('../models/Otp');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const axios = require('axios');
 const { getZodiacSign } = require('../utils/astrology');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -215,6 +216,96 @@ exports.appleLogin = async (req, res) => {
         res.status(501).json({ message: 'Вход через Apple ещё не реализован (требуются ключи Apple Developer)' });
     } catch (error) {
         res.status(500).json({ message: 'Ошибка авторизации через Apple', error: error.message });
+    }
+};
+
+exports.vkLogin = async (req, res) => {
+    try {
+        const { accessToken, email, phone } = req.body;
+        if (!accessToken) return res.status(400).json({ message: 'Требуется VK Access Token' });
+
+        // Call VK API to verify token and get user info
+        const vkResponse = await axios.get('https://api.vk.com/method/users.get', {
+            params: {
+                fields: 'photo_max,bdate,city,sex',
+                access_token: accessToken,
+                v: '5.131'
+            }
+        });
+
+        if (vkResponse.data.error) {
+            return res.status(400).json({ message: 'Недействительный токен VK', error: vkResponse.data.error });
+        }
+
+        const vkUser = vkResponse.data.response[0];
+        const vkId = vkUser.id;
+        const name = `${vkUser.first_name} ${vkUser.last_name}`;
+        const avatar = vkUser.photo_max;
+
+        // Try to find by VK ID first
+        let user = await User.findOne({ vkId });
+
+        // If not found by VK ID, try email or phone if provided by VK SDK
+        if (!user && (email || phone)) {
+            const query = [];
+            if (email) query.push({ email });
+            if (phone) query.push({ phone });
+            user = await User.findOne({ $or: query });
+
+            // Link accounts
+            if (user && !user.vkId) {
+                user.vkId = vkId;
+                if (user.authProvider === 'local') user.authProvider = 'vk'; // Or keep it local but add vkId depending on logic
+                await user.save();
+            }
+        }
+
+        // If still no user, create one
+        if (!user) {
+            // VK might not provide email directly in this endpoint, it's tied to the token request.
+            // If email is not passed from client side, generate a dummy one since email is required in User model
+            const generatedEmail = email || `vk_${vkId}@vk.login`;
+            const generatedPhone = phone || `vk_${vkId}`;
+
+            user = new User({
+                name,
+                email: generatedEmail,
+                password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10),
+                vkId: vkId.toString(),
+                avatar,
+                authProvider: 'vk',
+                isVerified: true,
+                phone: generatedPhone,
+                zodiacSign: '' 
+            });
+
+            // Try to parse bdate for sign
+            if (vkUser.bdate) {
+                // bdate format: D.M.YYYY or D.M
+                const parts = vkUser.bdate.split('.');
+                if (parts.length >= 2) {
+                    const day = parseInt(parts[0]);
+                    const month = parseInt(parts[1]) - 1; // 0-indexed
+                    let year = 2000; // default year
+                    if (parts.length === 3) {
+                        year = parseInt(parts[2]);
+                        user.dateOfBirth = new Date(year, month, day);
+                    }
+                }
+            }
+
+            await user.save();
+        }
+
+        const token = generateToken(user._id);
+        const userResponse = user.toObject();
+        delete userResponse.password;
+
+        res.status(200).json({ message: 'Вход через VK выполнен успешно', token, user: userResponse });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Ошибка авторизации через VK', error: error.message });
     }
 };
 

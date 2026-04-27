@@ -37,9 +37,12 @@ const userSchema = new mongoose.Schema({
     appleId: {
         type: String
     },
+    vkId: {
+        type: String
+    },
     authProvider: {
         type: String,
-        enum: ['local', 'google', 'apple'],
+        enum: ['local', 'google', 'apple', 'vk'],
         default: 'local'
     },
     deviceToken: {
