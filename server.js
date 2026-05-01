@@ -86,6 +86,34 @@ mongoose.connect(MONGO_URI)
 
         let onlineUsers = {}; // userId -> socket.id (simplified or map structure)
 
+        // ──────────────────────────────────────────────────────────────
+        // Chat Roulette: waiting queue
+        // Each entry: { socketId, userId, gender, lookingForGender }
+        // ──────────────────────────────────────────────────────────────
+        let rouletteQueue = [];
+
+        function findMatch(entry) {
+            // Gender matching logic:
+            // entry.lookingForGender === 'any'   => accepts anyone
+            // partner.lookingForGender === 'any' => partner accepts anyone
+            for (let i = 0; i < rouletteQueue.length; i++) {
+                const candidate = rouletteQueue[i];
+
+                // Don't match with yourself
+                if (candidate.socketId === entry.socketId) continue;
+
+                const myGenderOk = entry.lookingForGender === 'any' || candidate.gender === entry.lookingForGender;
+                const theirGenderOk = candidate.lookingForGender === 'any' || entry.gender === candidate.lookingForGender;
+
+                if (myGenderOk && theirGenderOk) {
+                    // Remove candidate from queue
+                    rouletteQueue.splice(i, 1);
+                    return candidate;
+                }
+            }
+            return null;
+        }
+
         io.on("connection", (socket) => {
             console.log("Connected to socket.io");
 
@@ -108,8 +136,93 @@ mongoose.connect(MONGO_URI)
             socket.on("typing", (room) => socket.in(room).emit("typing"));
             socket.on("stop typing", (room) => socket.in(room).emit("stop typing"));
 
+            // ── Chat Roulette Events ──────────────────────────────────
+
+            // Client joins roulette queue
+            // Payload: { userId, gender: 'male'|'female'|'other', lookingForGender: 'male'|'female'|'any' }
+            socket.on("roulette:join", ({ userId, gender, lookingForGender }) => {
+                // Remove any previous entry for this socket (reconnect safety)
+                rouletteQueue = rouletteQueue.filter(e => e.socketId !== socket.id);
+
+                const entry = {
+                    socketId: socket.id,
+                    userId,
+                    gender: gender || 'any',
+                    lookingForGender: lookingForGender || 'any',
+                };
+
+                const partner = findMatch(entry);
+
+                if (partner) {
+                    // Create a unique room id for the pair
+                    const room = `roulette_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+                    // Both join the room
+                    socket.join(room);
+                    io.sockets.sockets.get(partner.socketId)?.join(room);
+
+                    // Notify both sides
+                    socket.emit("roulette:matched", { room, partnerId: partner.userId });
+                    io.to(partner.socketId).emit("roulette:matched", { room, partnerId: userId });
+
+                    console.log(`Roulette matched: ${userId} <-> ${partner.userId} in room ${room}`);
+                } else {
+                    // Add to waiting queue
+                    rouletteQueue.push(entry);
+                    socket.emit("roulette:waiting");
+                    console.log(`Roulette waiting: ${userId} (gender: ${gender}, lookingFor: ${lookingForGender})`);
+                }
+            });
+
+            // Client leaves roulette queue (cancelled)
+            socket.on("roulette:leave", () => {
+                rouletteQueue = rouletteQueue.filter(e => e.socketId !== socket.id);
+                socket.emit("roulette:cancelled");
+                console.log(`Roulette cancelled for socket: ${socket.id}`);
+            });
+
+            // Client sends a roulette message (in-room, before chat is created)
+            socket.on("roulette:message", ({ room, message }) => {
+                socket.to(room).emit("roulette:message", { message });
+            });
+
+            // Client skips current partner and re-joins queue
+            socket.on("roulette:skip", ({ userId, gender, lookingForGender, room }) => {
+                // Leave old roulette room
+                if (room) socket.leave(room);
+
+                // Re-join queue
+                rouletteQueue = rouletteQueue.filter(e => e.socketId !== socket.id);
+
+                const entry = {
+                    socketId: socket.id,
+                    userId,
+                    gender: gender || 'any',
+                    lookingForGender: lookingForGender || 'any',
+                };
+
+                const partner = findMatch(entry);
+
+                if (partner) {
+                    const newRoom = `roulette_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                    socket.join(newRoom);
+                    io.sockets.sockets.get(partner.socketId)?.join(newRoom);
+
+                    socket.emit("roulette:matched", { room: newRoom, partnerId: partner.userId });
+                    io.to(partner.socketId).emit("roulette:matched", { room: newRoom, partnerId: userId });
+                } else {
+                    rouletteQueue.push(entry);
+                    socket.emit("roulette:waiting");
+                }
+            });
+
+            // ─────────────────────────────────────────────────────────
+
             socket.on("disconnect", () => {
                 console.log("USER DISCONNECTED");
+                // Remove from roulette queue if present
+                rouletteQueue = rouletteQueue.filter(e => e.socketId !== socket.id);
+
                 // Find and remove the user
                 for (let userId in onlineUsers) {
                     if (onlineUsers[userId] === socket.id) {

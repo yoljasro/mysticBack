@@ -63,6 +63,12 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['male', 'female', 'other', '']
     },
+    // Ким qidiradi (chat roulette uchun filter)
+    lookingForGender: {
+        type: String,
+        enum: ['male', 'female', 'any', ''],
+        default: 'any'
+    },
     location: {
         latitude: Number,
         longitude: Number,

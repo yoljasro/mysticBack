@@ -36,7 +36,7 @@ exports.updateProfile = async (req, res) => {
     try {
         const updates = Object.keys(req.body);
         const allowedUpdates = [
-            'name', 'nickname', 'gender', 'location', 'searchRadius',
+            'name', 'nickname', 'gender', 'lookingForGender', 'location', 'searchRadius',
             'placeOfBirth', 'timeOfBirth', 'lookingFor', 'lookingForGoal', 'interests',
             'photos', 'bio', 'personalityType', 'onboardingStep',
             'onboardingCompleted', 'notificationsEnabled', 'ageRange',
