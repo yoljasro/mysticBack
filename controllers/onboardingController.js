@@ -41,7 +41,7 @@ exports.updateProfile = async (req, res) => {
             'photos', 'bio', 'personalityType', 'onboardingStep',
             'onboardingCompleted', 'notificationsEnabled', 'ageRange',
             'dateOfBirth', 'hideProfile', 'jungType', 'locationEnabled', 'timezone',
-            'searchSettings'
+            'searchSettings', 'isOpenForDating'
         ];
 
         const isValidOperation = updates.every((update) => allowedUpdates.includes(update));

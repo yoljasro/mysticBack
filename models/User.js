@@ -172,6 +172,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    isOpenForDating: {
+        type: Boolean,
+        default: true
+    },
     zodiacSign: {
         type: String,
         default: ''

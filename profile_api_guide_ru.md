@@ -120,3 +120,6 @@ Authorization: Bearer <your_jwt_token>
 
 **Остальные настройки:**
 * `isOpenForReading` (Открыт(а) для синастрий - Boolean)
+* `isOpenForDating` (Открыт(а) для свиданий - Boolean)
+* `notificationsEnabled` (Уведомления включены - Boolean)
+* `locationEnabled` (Геопозиция включена - Boolean)
