@@ -14,6 +14,9 @@ const interactionSchema = new mongoose.Schema({
     action: {
         type: String,
         enum: ['like', 'pass'],
+
+
+
         required: true
     },
     isMatch: {
